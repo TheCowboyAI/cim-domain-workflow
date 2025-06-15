@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-pub use cim_domain::{DomainEvent, DomainResult};
+pub use cim_domain::{DomainEvent, DomainResult, DomainError};
 
 /// Unique identifier for a workflow
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -120,7 +120,7 @@ impl Workflow {
     /// Start the workflow execution
     pub fn start(&mut self) -> DomainResult<()> {
         if self.status != WorkflowStatus::Draft {
-            return Err("Workflow can only be started from Draft status".into());
+            return Err(DomainError::generic("Workflow can only be started from Draft status"));
         }
         self.status = WorkflowStatus::Running;
         Ok(())
@@ -129,7 +129,7 @@ impl Workflow {
     /// Complete the workflow
     pub fn complete(&mut self) -> DomainResult<()> {
         if self.status != WorkflowStatus::Running {
-            return Err("Workflow can only be completed from Running status".into());
+            return Err(DomainError::generic("Workflow can only be completed from Running status"));
         }
         self.status = WorkflowStatus::Completed;
         Ok(())
