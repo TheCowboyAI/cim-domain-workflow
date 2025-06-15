@@ -1,0 +1,24 @@
+[package]
+name = "cim-domain-workflow"
+version = "0.1.0"
+edition = "2021"
+authors = ["The Cowboy AI"]
+description = "Workflow domain module for CIM - handles business process workflows"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/thecowboyai/alchemist"
+keywords = ["workflow", "domain", "business-process", "cim"]
+categories = ["data-structures", "algorithms"]
+
+[dependencies]
+# Core domain dependency
+cim-domain = { path = "../cim-domain" }
+
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4"
