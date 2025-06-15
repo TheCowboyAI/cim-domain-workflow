@@ -45,6 +45,17 @@ impl Default for StepId {
     }
 }
 
+/// Unique identifier for a state
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct StateId(pub String);
+
+impl StateId {
+    /// Create a new state ID
+    pub fn new(id: String) -> Self {
+        Self(id)
+    }
+}
+
 /// Represents the status of a workflow
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WorkflowStatus {
@@ -60,6 +71,200 @@ pub enum WorkflowStatus {
     Paused,
     /// Workflow was cancelled
     Cancelled,
+}
+
+/// Trait for workflow states
+pub trait WorkflowState: Clone + Send + Sync + std::fmt::Debug {
+    /// Get the unique identifier for this state
+    fn id(&self) -> StateId;
+    
+    /// Check if this is a terminal state
+    fn is_terminal(&self) -> bool;
+    
+    /// Get the name of this state
+    fn name(&self) -> &str;
+}
+
+/// Trait for transition inputs
+pub trait TransitionInput: Clone + Send + Sync + std::fmt::Debug {
+    /// Get the input type identifier
+    fn input_type(&self) -> &str;
+}
+
+/// Trait for transition outputs
+pub trait TransitionOutput: Clone + Send + Sync + std::fmt::Debug {
+    /// Get the output type identifier
+    fn output_type(&self) -> &str;
+}
+
+/// Workflow execution context
+#[derive(Debug, Clone, Default)]
+pub struct WorkflowContext {
+    /// Context variables
+    pub variables: HashMap<String, serde_json::Value>,
+    /// Current user or actor
+    pub actor: Option<String>,
+    /// Execution metadata
+    pub metadata: HashMap<String, String>,
+}
+
+/// Trait for workflow transitions
+pub trait WorkflowTransition<S, I, O>: Send + Sync + std::fmt::Debug
+where
+    S: WorkflowState,
+    I: TransitionInput,
+    O: TransitionOutput,
+{
+    /// Get the source state
+    fn source(&self) -> &S;
+    
+    /// Get the target state
+    fn target(&self) -> &S;
+    
+    /// Check if this transition accepts the given input
+    fn accepts_input(&self, input: &I) -> bool;
+    
+    /// Check if the guard condition is satisfied
+    fn guard(&self, context: &WorkflowContext) -> bool;
+    
+    /// Execute the transition and produce output
+    fn execute(&self, input: &I, context: &WorkflowContext) -> DomainResult<O>;
+    
+    /// Get the transition name
+    fn name(&self) -> &str;
+}
+
+/// Simple implementation of WorkflowState
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimpleState {
+    /// State identifier
+    pub id: StateId,
+    /// State name
+    pub name: String,
+    /// Whether this is a terminal state
+    pub is_terminal: bool,
+}
+
+impl SimpleState {
+    /// Create a new simple state
+    pub fn new(name: &str) -> Self {
+        Self {
+            id: StateId::new(name.to_string()),
+            name: name.to_string(),
+            is_terminal: false,
+        }
+    }
+    
+    /// Create a new terminal state
+    pub fn terminal(name: &str) -> Self {
+        Self {
+            id: StateId::new(name.to_string()),
+            name: name.to_string(),
+            is_terminal: true,
+        }
+    }
+}
+
+impl WorkflowState for SimpleState {
+    fn id(&self) -> StateId {
+        self.id.clone()
+    }
+    
+    fn is_terminal(&self) -> bool {
+        self.is_terminal
+    }
+    
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+/// Simple implementation of TransitionInput
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SimpleInput {
+    /// Input data
+    pub data: HashMap<String, serde_json::Value>,
+}
+
+impl TransitionInput for SimpleInput {
+    fn input_type(&self) -> &str {
+        "simple"
+    }
+}
+
+/// Simple implementation of TransitionOutput
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SimpleOutput {
+    /// Output data
+    pub data: HashMap<String, serde_json::Value>,
+}
+
+impl TransitionOutput for SimpleOutput {
+    fn output_type(&self) -> &str {
+        "simple"
+    }
+}
+
+/// Simple implementation of WorkflowTransition
+#[derive(Debug, Clone)]
+pub struct SimpleTransitionImpl {
+    /// Transition name
+    pub name: String,
+    /// Source state
+    pub source: SimpleState,
+    /// Target state
+    pub target: SimpleState,
+    /// Expected input
+    pub expected_input: SimpleInput,
+    /// Produced output
+    pub output: SimpleOutput,
+}
+
+impl SimpleTransitionImpl {
+    /// Create a new simple transition
+    pub fn new(
+        name: &str,
+        source: SimpleState,
+        target: SimpleState,
+        expected_input: SimpleInput,
+        output: SimpleOutput,
+    ) -> Self {
+        Self {
+            name: name.to_string(),
+            source,
+            target,
+            expected_input,
+            output,
+        }
+    }
+}
+
+impl WorkflowTransition<SimpleState, SimpleInput, SimpleOutput> for SimpleTransitionImpl {
+    fn source(&self) -> &SimpleState {
+        &self.source
+    }
+    
+    fn target(&self) -> &SimpleState {
+        &self.target
+    }
+    
+    fn accepts_input(&self, _input: &SimpleInput) -> bool {
+        // Simple implementation accepts any input
+        true
+    }
+    
+    fn guard(&self, _context: &WorkflowContext) -> bool {
+        // Simple implementation has no guard conditions
+        true
+    }
+    
+    fn execute(&self, _input: &SimpleInput, _context: &WorkflowContext) -> DomainResult<SimpleOutput> {
+        Ok(self.output.clone())
+    }
+    
+    fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 /// Represents a workflow step
