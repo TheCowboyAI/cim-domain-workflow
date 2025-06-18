@@ -1,23 +1,36 @@
-//! Workflow command handler
+//! Workflow command handlers
 
 use crate::{
     aggregate::Workflow,
     commands::*,
-    value_objects::{WorkflowId, StepId},
+    value_objects::*,
+    domain_events::WorkflowDomainEvent,
 };
-use cim_domain::{DomainResult, DomainError, CommandEnvelope, CommandAcknowledgment, CommandStatus};
+use cim_domain::{DomainResult, DomainError};
 use std::collections::HashMap;
+
+/// Trait for handling workflow commands
+pub trait WorkflowCommandHandler: Send + Sync {
+    /// Handle create workflow command
+    fn handle_create_workflow(&mut self, cmd: CreateWorkflow) -> DomainResult<Vec<WorkflowDomainEvent>>;
+    
+    /// Handle start workflow command
+    fn handle_start_workflow(&mut self, cmd: StartWorkflow) -> DomainResult<Vec<WorkflowDomainEvent>>;
+    
+    /// Handle add step command
+    fn handle_add_step(&mut self, cmd: AddStep) -> DomainResult<Vec<WorkflowDomainEvent>>;
+}
 
 /// Handler for workflow commands
 /// 
 /// Processes workflow commands through proper DDD patterns:
-/// Command -> Validate -> Load Aggregate -> Apply Business Logic -> Generate Events -> Store Events -> Return Acknowledgment
-pub struct WorkflowCommandHandler {
+/// Command -> Validate -> Load Aggregate -> Apply Business Logic -> Generate Events -> Store Events -> Return Events
+pub struct WorkflowCommandHandlerImpl {
     /// In-memory store for testing/demo - replace with actual event store
     workflows: HashMap<WorkflowId, Workflow>,
 }
 
-impl WorkflowCommandHandler {
+impl WorkflowCommandHandlerImpl {
     /// Create a new command handler
     pub fn new() -> Self {
         Self {
@@ -25,20 +38,21 @@ impl WorkflowCommandHandler {
         }
     }
 
-    /// Handle create workflow command
-    pub fn handle_create_workflow(
-        &mut self,
-        envelope: CommandEnvelope<CreateWorkflow>,
-    ) -> DomainResult<CommandAcknowledgment> {
-        let cmd = envelope.command;
+    /// Get workflow for testing/debugging
+    pub fn get_workflow(&self, workflow_id: &WorkflowId) -> Option<&Workflow> {
+        self.workflows.get(workflow_id)
+    }
+}
 
+impl WorkflowCommandHandler for WorkflowCommandHandlerImpl {
+    fn handle_create_workflow(&mut self, cmd: CreateWorkflow) -> DomainResult<Vec<WorkflowDomainEvent>> {
         // Validate command
         if cmd.name.trim().is_empty() {
             return Err(DomainError::generic("Workflow name cannot be empty"));
         }
 
         // Create new workflow aggregate
-        let (workflow, _events) = Workflow::new(
+        let (workflow, events) = Workflow::new(
             cmd.name,
             cmd.description,
             cmd.metadata,
@@ -49,51 +63,29 @@ impl WorkflowCommandHandler {
         let workflow_id = workflow.id;
         self.workflows.insert(workflow_id, workflow);
 
-        Ok(CommandAcknowledgment {
-            command_id: envelope.id,
-            correlation_id: envelope.correlation_id,
-            status: CommandStatus::Accepted,
-            reason: None,
-        })
+        Ok(events)
     }
 
-    /// Handle start workflow command
-    pub fn handle_start_workflow(
-        &mut self,
-        envelope: CommandEnvelope<StartWorkflow>,
-    ) -> DomainResult<CommandAcknowledgment> {
-        let cmd = envelope.command;
-
+    fn handle_start_workflow(&mut self, cmd: StartWorkflow) -> DomainResult<Vec<WorkflowDomainEvent>> {
         // Load workflow
         let workflow = self.workflows
             .get_mut(&cmd.workflow_id)
             .ok_or_else(|| DomainError::generic("Workflow not found"))?;
 
         // Start workflow
-        let _events = workflow.start(cmd.context, cmd.started_by)?;
+        let events = workflow.start(cmd.context, cmd.started_by)?;
 
-        Ok(CommandAcknowledgment {
-            command_id: envelope.id,
-            correlation_id: envelope.correlation_id,
-            status: CommandStatus::Accepted,
-            reason: None,
-        })
+        Ok(events)
     }
 
-    /// Handle add step command
-    pub fn handle_add_step(
-        &mut self,
-        envelope: CommandEnvelope<AddStep>,
-    ) -> DomainResult<CommandAcknowledgment> {
-        let cmd = envelope.command;
-
+    fn handle_add_step(&mut self, cmd: AddStep) -> DomainResult<Vec<WorkflowDomainEvent>> {
         // Load workflow
         let workflow = self.workflows
             .get_mut(&cmd.workflow_id)
             .ok_or_else(|| DomainError::generic("Workflow not found"))?;
 
         // Add step
-        let _events = workflow.add_step(
+        let events = workflow.add_step(
             cmd.name,
             cmd.description,
             cmd.step_type,
@@ -104,21 +96,11 @@ impl WorkflowCommandHandler {
             cmd.added_by,
         )?;
 
-        Ok(CommandAcknowledgment {
-            command_id: envelope.id,
-            correlation_id: envelope.correlation_id,
-            status: CommandStatus::Accepted,
-            reason: None,
-        })
-    }
-
-    /// Get workflow for testing/debugging
-    pub fn get_workflow(&self, workflow_id: &WorkflowId) -> Option<&Workflow> {
-        self.workflows.get(workflow_id)
+        Ok(events)
     }
 }
 
-impl Default for WorkflowCommandHandler {
+impl Default for WorkflowCommandHandlerImpl {
     fn default() -> Self {
         Self::new()
     }

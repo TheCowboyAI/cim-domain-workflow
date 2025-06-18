@@ -208,7 +208,7 @@ impl WorkflowContextGraph {
         }
 
         // Connect terminal steps to end node
-        for (step_id, step) in &workflow.steps {
+        for (step_id, _step) in &workflow.steps {
             let is_terminal = !workflow.steps.values().any(|other_step| {
                 other_step.dependencies.contains(step_id)
             });

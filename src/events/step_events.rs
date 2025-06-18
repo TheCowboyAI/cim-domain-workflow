@@ -1,6 +1,6 @@
 //! Workflow step domain events
 
-use crate::value_objects::{WorkflowId, StepId, StepType, StepStatus};
+use crate::value_objects::{WorkflowId, StepId, StepType};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

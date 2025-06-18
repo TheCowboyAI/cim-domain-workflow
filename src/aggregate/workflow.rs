@@ -1,15 +1,14 @@
-//! Workflow aggregate root
+//! Workflow aggregate
+//!
+//! The workflow aggregate represents a business process definition with steps,
+//! transitions, and execution state.
 
-use crate::{
-    value_objects::{WorkflowId, StepId, WorkflowStatus, WorkflowStep, WorkflowContext, StepType},
-    events::*,
-    commands::*,
-};
-use cim_domain::{DomainError, DomainResult, AggregateRoot, EntityId};
+use crate::value_objects::*;
+use crate::events::*;
 use crate::domain_events::WorkflowDomainEvent;
+use cim_domain::{AggregateRoot, DomainResult, DomainError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::SystemTime;
 
 /// Workflow aggregate root
 /// 

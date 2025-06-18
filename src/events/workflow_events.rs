@@ -1,6 +1,6 @@
 //! Workflow domain events
 
-use crate::value_objects::{WorkflowId, WorkflowStatus, WorkflowContext};
+use crate::value_objects::{WorkflowId, WorkflowContext};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

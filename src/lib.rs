@@ -60,9 +60,4 @@ pub mod projections;
 pub mod queries;
 pub mod value_objects;
 
-// Legacy workflow engine removed - replaced with proper DDD structure
-
-// Standard library and external dependencies
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use uuid::Uuid; 
+// Legacy workflow engine removed - replaced with proper DDD structure 
