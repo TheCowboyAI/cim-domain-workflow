@@ -1,7 +1,7 @@
 //! Workflow projection for read models
 
 use crate::{
-    value_objects::{WorkflowId, WorkflowStatus, StepId, StepStatus},
+    value_objects::{WorkflowId, WorkflowStatus, StepId},
     queries::{WorkflowView, StepView},
     events::*,
 };

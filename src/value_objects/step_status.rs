@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 
 /// Represents the status of a workflow step
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum StepStatus {
     /// Step is defined but not started
+    #[default]
     Pending,
     /// Step is currently executing
     Running,
@@ -53,8 +55,4 @@ impl StepStatus {
     }
 }
 
-impl Default for StepStatus {
-    fn default() -> Self {
-        StepStatus::Pending
-    }
-} 
+ 

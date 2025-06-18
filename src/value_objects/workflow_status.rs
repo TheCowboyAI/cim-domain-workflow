@@ -57,8 +57,7 @@ impl WorkflowStatus {
             Ok(target)
         } else {
             Err(DomainError::generic(format!(
-                "Invalid workflow status transition from {:?} to {:?}",
-                self, target
+                "Invalid workflow status transition from {self:?} to {target:?}"
             )))
         }
     }
