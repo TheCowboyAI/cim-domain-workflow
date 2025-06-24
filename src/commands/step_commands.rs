@@ -1,7 +1,7 @@
-//! Workflow step commands
+//! Step-related commands
 
 use crate::value_objects::{WorkflowId, StepId, StepType};
-use crate::aggregate::Workflow;
+use crate::Workflow;
 use cim_domain::Command;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

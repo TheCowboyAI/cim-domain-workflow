@@ -73,7 +73,7 @@ fn test_w1_design_visual_workflow() {
     assert_eq!(events.len(), 1);
     match &events[0] {
         cim_domain_workflow::domain_events::WorkflowDomainEvent::WorkflowCreated(event) => {
-            assert_eq!(event.workflow_id, workflow.id);
+            assert_eq!(event.workflow_id, workflow.id());
             assert_eq!(event.name, workflow_name);
             assert_eq!(event.description, workflow_description);
             assert_eq!(event.metadata, metadata);
@@ -356,8 +356,8 @@ fn test_w4_start_workflow_instance() {
     
     // When: Starting the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("order_id".to_string().to_string(), json!("ORD-12345"));
-    context.set_variable("customer_id".to_string().to_string(), json!("CUST-789"));
+    context.set_variable("order_id".to_string(), json!("ORD-12345"));
+    context.set_variable("customer_id".to_string(), json!("CUST-789"));
     
     let start_events = workflow.start(
         context.clone(),
@@ -366,13 +366,13 @@ fn test_w4_start_workflow_instance() {
     
     // Then: The workflow should be in Running status
     assert_eq!(workflow.status, WorkflowStatus::Running);
-    // Note: started_at is now tracked in the workflow context or metadata
+    assert!(workflow.started_at.is_some());
     
     // And: A WorkflowStarted event should be emitted
     assert_eq!(start_events.len(), 1);
     match &start_events[0] {
         WorkflowDomainEvent::WorkflowStarted(event) => {
-            assert_eq!(event.workflow_id, workflow.id);
+            assert_eq!(event.workflow_id, workflow.id());
             assert_eq!(event.context.get_variable("order_id"), Some(&json!("ORD-12345")));
             assert_eq!(event.started_by, Some("operator@example.com".to_string()));
         }
@@ -385,18 +385,14 @@ fn test_w4_start_workflow_instance() {
     assert_eq!(executable_steps[0].name, "Receive Order");
     
     // When: Trying to start an already running workflow
-    let mut new_context = WorkflowContext::new();
-    new_context.set_variable("test".to_string(), serde_json::json!("value"));
     let result = workflow.start(
-        new_context,
+        WorkflowContext::new(),
         Some("operator@example.com".to_string()),
     );
     
     // Then: It should fail
     assert!(result.is_err());
-    // The state machine returns a different error message
-    let error_message = result.unwrap_err().to_string();
-    assert!(error_message.contains("Invalid transition") || error_message.contains("Cannot start workflow in status Running"));
+    assert!(result.unwrap_err().to_string().contains("Cannot start workflow in status Running"));
 }
 
 /// User Story: W5 - Execute Workflow Tasks
@@ -440,10 +436,8 @@ fn test_w5_execute_workflow_tasks() {
     }
     
     // Start the workflow
-    let mut context = WorkflowContext::new();
-    context.set_variable("test".to_string(), serde_json::json!("value"));
     workflow.start(
-        context,
+        WorkflowContext::new(),
         Some("operator@example.com".to_string()),
     ).expect("Should start workflow");
     
@@ -493,7 +487,7 @@ fn test_w5_execute_workflow_tasks() {
         .expect("Should complete workflow");
     
     assert_eq!(workflow.status, WorkflowStatus::Completed);
-    // Note: completed_at is now tracked in the workflow context or metadata
+    assert!(workflow.completed_at.is_some());
 }
 
 /// User Story: W6 - Handle Workflow Decisions
@@ -586,14 +580,11 @@ fn test_w6_handle_workflow_decisions() {
     };
     
     // Common final step
-    let mut process_config = HashMap::new();
-    process_config.insert("dependency_mode".to_string(), json!("OR")); // Can come from either branch
-    
     let process_order = workflow.add_step(
         "Process Order".to_string(),
         "Process the approved order".to_string(),
         StepType::Automated,
-        process_config,
+        HashMap::new(),
         vec![auto_approve_id, manual_approve_id], // Can come from either branch
         None,
         None,
@@ -602,7 +593,7 @@ fn test_w6_handle_workflow_decisions() {
     
     // Start workflow with context
     let mut context = WorkflowContext::new();
-    context.set_variable("order_value".to_string().to_string(), json!(500)); // Low value order
+    context.set_variable("order_value".to_string(), json!(500)); // Low value order
     
     workflow.start(context, Some("operator@example.com".to_string()))
         .expect("Should start workflow");
@@ -686,10 +677,8 @@ fn test_w7_monitor_workflow_progress() {
     }
     
     // Start the workflow
-    let mut context = WorkflowContext::new();
-    context.set_variable("test".to_string(), serde_json::json!("value"));
     workflow.start(
-        context,
+        WorkflowContext::new(),
         Some("operator@example.com".to_string()),
     ).expect("Should start workflow");
     
@@ -848,10 +837,8 @@ fn test_w8_assign_human_tasks() {
     };
     
     // Start the workflow
-    let mut context = WorkflowContext::new();
-    context.set_variable("test".to_string(), serde_json::json!("value"));
     workflow.start(
-        context,
+        WorkflowContext::new(),
         Some("operator@example.com".to_string()),
     ).expect("Should start workflow");
     
@@ -867,7 +854,7 @@ fn test_w8_assign_human_tasks() {
     assert_eq!(assignable_tasks.len(), 1);
     assert_eq!(assignable_tasks[0].name, "Review Document");
     assert!(assignable_tasks[0].assigned_to.is_none());
-    assert_eq!(assignable_tasks[0].config.get("required_role"), 
+    assert_eq!(assignable_tasks[0].configuration.get("required_role"), 
                Some(&json!("reviewer")));
     
     // When: Assigning task to a reviewer
@@ -903,10 +890,8 @@ fn test_w8_assign_human_tasks() {
     // When: Reassigning task to another reviewer
     let reassign_events = workflow.reassign_task(
         review_id,
-        "reviewer1@example.com".to_string(),  // from_assignee
-        "reviewer2@example.com".to_string(),  // to_assignee
-        Some("manager@example.com".to_string()),  // reassigned_by
-        Some("Workload balancing".to_string()),  // reason
+        "reviewer2@example.com".to_string(),
+        Some("manager@example.com".to_string()),
     ).expect("Should reassign task");
     
     // Then: Task should be reassigned
@@ -931,14 +916,10 @@ fn test_w8_assign_human_tasks() {
     // When: Checking pre-assigned tasks
     let pre_assigned_tasks = workflow.get_pre_assigned_tasks();
     
-    // Then: Should find both review (now assigned) and approval (pre-assigned) tasks
-    assert_eq!(pre_assigned_tasks.len(), 2);
-    
-    // Find the approval task specifically
-    let approval_task = pre_assigned_tasks.iter()
-        .find(|t| t.name == "Approve Document")
-        .expect("Should find approval task");
-    assert_eq!(approval_task.assigned_to, Some("manager@example.com".to_string()));
+    // Then: Should find the approval task
+    assert_eq!(pre_assigned_tasks.len(), 1);
+    assert_eq!(pre_assigned_tasks[0].name, "Approve Document");
+    assert_eq!(pre_assigned_tasks[0].assigned_to, Some("manager@example.com".to_string()));
 }
 
 /// User Story: W9 - Complete Human Tasks
@@ -1021,10 +1002,8 @@ fn test_w9_complete_human_tasks() {
     };
     
     // Start the workflow
-    let mut context = WorkflowContext::new();
-    context.set_variable("test".to_string(), serde_json::json!("value"));
     workflow.start(
-        context,
+        WorkflowContext::new(),
         Some("hr@example.com".to_string()),
     ).expect("Should start workflow");
     
@@ -1038,8 +1017,8 @@ fn test_w9_complete_human_tasks() {
     
     let complete_events = workflow.complete_task(
         collect_id,
-        "hr_specialist@example.com".to_string(),
-        form_data,
+        Some(json!(form_data)),
+        Some("hr_specialist@example.com".to_string()),
     ).expect("Should complete task");
     
     // Then: Task should be completed with form data
@@ -1047,9 +1026,9 @@ fn test_w9_complete_human_tasks() {
     match &complete_events[0] {
         WorkflowDomainEvent::TaskCompleted(event) => {
             assert_eq!(event.step_id, collect_id);
-            assert_eq!(event.completed_by, "hr_specialist@example.com".to_string());
-            assert!(!event.completion_data.is_empty());
-            let output = &event.completion_data;
+            assert_eq!(event.completed_by, Some("hr_specialist@example.com".to_string()));
+            assert!(event.output_data.is_some());
+            let output = event.output_data.as_ref().unwrap();
             assert_eq!(output["name"], json!("John Doe"));
         }
         _ => panic!("Expected TaskCompleted event"),
@@ -1063,7 +1042,7 @@ fn test_w9_complete_human_tasks() {
     // When: IT admin starts working on the task
     let start_events = workflow.start_task(
         it_id,
-        "it_admin@example.com".to_string(),
+        Some("it_admin@example.com".to_string()),
     ).expect("Should start task");
     
     assert_eq!(start_events.len(), 1);
@@ -1077,16 +1056,16 @@ fn test_w9_complete_human_tasks() {
     
     // When: IT admin completes checklist items progressively
     let mut checklist = HashMap::new();
-    checklist.insert("create_email".to_string(), json!(true));
-    checklist.insert("setup_workstation".to_string(), json!(true));
-    checklist.insert("grant_access".to_string(), json!(true));
-    checklist.insert("provide_equipment".to_string(), json!(true));
-    checklist.insert("equipment_list".to_string(), json!(["Laptop", "Monitor", "Keyboard", "Mouse"]));
+    checklist.insert("create_email", json!(true));
+    checklist.insert("setup_workstation", json!(true));
+    checklist.insert("grant_access", json!(true));
+    checklist.insert("provide_equipment", json!(true));
+    checklist.insert("equipment_list", json!(["Laptop", "Monitor", "Keyboard", "Mouse"]));
     
     let it_complete_events = workflow.complete_task(
         it_id,
-        "it_admin@example.com".to_string(),
-        checklist,
+        Some(json!(checklist)),
+        Some("it_admin@example.com".to_string()),
     ).expect("Should complete IT task");
     
     // Then: Both prerequisite tasks should be complete
@@ -1108,8 +1087,8 @@ fn test_w9_complete_human_tasks() {
     
     let approval_events = workflow.complete_task(
         approval_id,
-        "dept_manager@example.com".to_string(),
-        approval_data,
+        Some(json!(approval_data)),
+        Some("dept_manager@example.com".to_string()),
     ).expect("Should complete approval");
     
     // Then: All tasks should be complete
@@ -1258,12 +1237,12 @@ fn test_w10_invoke_system_tasks() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("order_id".to_string(), json!("ORD-123456"));
-    context.set_variable("items".to_string(), json!([
+    context.set_variable("order_id", json!("ORD-123456"));
+    context.set_variable("items", json!([
         {"sku": "PROD-001", "quantity": 2},
         {"sku": "PROD-002", "quantity": 1}
     ]));
-    context.set_variable("total_amount".to_string(), json!(150.00));
+    context.set_variable("total_amount", json!(150.00));
     
     workflow.start(context, Some("system@example.com".to_string()))
         .expect("Should start workflow");
@@ -1385,7 +1364,7 @@ fn test_w11_handle_task_failures() {
     
     // Add compensation step
     let mut compensation_config = HashMap::new();
-    compensation_config.insert("compensation_for".to_string(), json!(api_id.0.to_string()));
+    compensation_config.insert("compensation_for".to_string(), json!(api_id.as_uuid().to_string()));
     compensation_config.insert("compensation_type".to_string(), json!("rollback"));
     
     let compensate = workflow.add_step(
@@ -1400,10 +1379,8 @@ fn test_w11_handle_task_failures() {
     ).expect("Should add compensation step");
     
     // Start the workflow
-    let mut context = WorkflowContext::new();
-    context.set_variable("test".to_string(), serde_json::json!("value"));
     workflow.start(
-        context,
+        WorkflowContext::new(),
         Some("operator@example.com".to_string()),
     ).expect("Should start workflow");
     
@@ -1423,7 +1400,7 @@ fn test_w11_handle_task_failures() {
     assert_eq!(fail_events.len(), 1);
     match &fail_events[0] {
         WorkflowDomainEvent::WorkflowFailed(event) => {
-            assert_eq!(event.workflow_id, workflow.id);
+            assert_eq!(event.workflow_id, workflow.id());
             assert!(event.error.contains("Connection timeout"));
         }
         _ => panic!("Expected WorkflowFailed event"),
@@ -1476,7 +1453,7 @@ fn test_w12_circuit_breakers() {
     // Fallback payment gateway
     let mut fallback_config = HashMap::new();
     fallback_config.insert("gateway".to_string(), json!("paypal"));
-    fallback_config.insert("fallback_for".to_string(), json!(primary_id.0.to_string()));
+    fallback_config.insert("fallback_for".to_string(), json!(primary_id.as_uuid().to_string()));
     fallback_config.insert("circuit_breaker".to_string(), json!({
         "failure_threshold": 3,  // More conservative for fallback
         "success_threshold": 1,
@@ -1514,9 +1491,9 @@ fn test_w12_circuit_breakers() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("amount".to_string(), json!(99.99));
-    context.set_variable("currency".to_string(), json!("USD"));
-    context.set_variable("customer_id".to_string(), json!("CUST-123"));
+    context.set_variable("amount", json!(99.99));
+    context.set_variable("currency", json!("USD"));
+    context.set_variable("customer_id", json!("CUST-123"));
     
     workflow.start(context, Some("payment-system@example.com".to_string()))
         .expect("Should start workflow");
@@ -1647,13 +1624,13 @@ fn test_w13_rollback_workflow() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("order_id".to_string(), json!("ORD-789"));
-    context.set_variable("items".to_string(), json!([
+    context.set_variable("order_id", json!("ORD-789"));
+    context.set_variable("items", json!([
         {"sku": "ITEM-001", "quantity": 2},
         {"sku": "ITEM-002", "quantity": 1}
     ]));
-    context.set_variable("payment_method".to_string(), json!("credit_card"));
-    context.set_variable("amount".to_string(), json!(250.00));
+    context.set_variable("payment_method", json!("credit_card"));
+    context.set_variable("amount", json!(250.00));
     
     workflow.start(context, Some("order-system@example.com".to_string()))
         .expect("Should start workflow");
@@ -1674,7 +1651,7 @@ fn test_w13_rollback_workflow() {
     assert_eq!(cancel_events.len(), 1);
     match &cancel_events[0] {
         WorkflowDomainEvent::WorkflowCancelled(event) => {
-            assert_eq!(event.workflow_id, workflow.id);
+            assert_eq!(event.workflow_id, workflow.id());
             assert!(event.reason.contains("Rollback required"));
         }
         _ => panic!("Expected WorkflowCancelled event"),
@@ -1784,10 +1761,10 @@ fn test_w14_monitor_workflow_progress() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("ticket_id".to_string(), json!("TICKET-12345"));
-    context.set_variable("customer_id".to_string(), json!("CUST-PREMIUM-789"));
-    context.set_variable("issue_type".to_string(), json!("performance"));
-    context.set_variable("severity".to_string(), json!("high"));
+    context.set_variable("ticket_id", json!("TICKET-12345"));
+    context.set_variable("customer_id", json!("CUST-PREMIUM-789"));
+    context.set_variable("issue_type", json!("performance"));
+    context.set_variable("severity", json!("high"));
     
     workflow.start(context, Some("support@example.com".to_string()))
         .expect("Should start workflow");
@@ -1836,7 +1813,7 @@ fn test_w15_analyze_workflow_performance() {
     ).expect("Should create workflow");
     
     // Create a typical e-commerce workflow
-    let steps_data: Vec<(&str, StepType, i32, Vec<StepId>)> = vec![
+    let steps_data = vec![
         ("Validate Order", StepType::Automated, 2, vec![]),
         ("Check Inventory", StepType::Integration, 5, vec![]),
         ("Reserve Stock", StepType::Automated, 3, vec![]),
@@ -1858,7 +1835,7 @@ fn test_w15_analyze_workflow_performance() {
         config.insert("success_rate".to_string(), json!(0.95)); // 95% success rate
         
         // Add performance metrics
-        match name.as_ref() {
+        match name.as_str() {
             "Check Inventory" => {
                 config.insert("bottleneck_frequency".to_string(), json!(0.15)); // 15% of time
                 config.insert("avg_retry_count".to_string(), json!(1.2));
@@ -1892,8 +1869,8 @@ fn test_w15_analyze_workflow_performance() {
     
     // Start the workflow for analysis
     let mut context = WorkflowContext::new();
-    context.set_variable("analysis_mode".to_string(), json!(true));
-    context.set_variable("historical_executions".to_string(), json!(1000)); // Analyzed 1000 runs
+    context.set_variable("analysis_mode", json!(true));
+    context.set_variable("historical_executions", json!(1000)); // Analyzed 1000 runs
     
     workflow.start(context, Some("analytics@example.com".to_string()))
         .expect("Should start workflow");
@@ -2154,9 +2131,9 @@ fn test_w18_loop_pattern() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("dataset_id".to_string(), json!("CUST-DATA-2024"));
-    context.set_variable("initial_quality_score".to_string(), json!(78.5)); // Starting at 78.5% quality
-    context.set_variable("target_quality".to_string(), json!(95.0));
+    context.set_variable("dataset_id", json!("CUST-DATA-2024"));
+    context.set_variable("initial_quality_score", json!(78.5)); // Starting at 78.5% quality
+    context.set_variable("target_quality", json!(95.0));
     
     workflow.start(context, Some("data-quality@example.com".to_string()))
         .expect("Should start workflow");
@@ -2509,7 +2486,7 @@ fn test_w20_create_sub_workflows() {
         "Call IT setup sub-workflow with employee data".to_string(),
         StepType::Custom("SubWorkflow".to_string()),
         HashMap::from([
-                            ("sub_workflow_id".to_string(), json!(it_setup_workflow.id.0.to_string())),
+            ("sub_workflow_id".to_string(), json!(it_setup_workflow.id.to_string())),
             ("sub_workflow_name".to_string(), json!("IT Equipment and Access Setup")),
             ("parameter_mapping".to_string(), json!({
                 "employee_name": "$.employee.full_name",
@@ -2538,7 +2515,7 @@ fn test_w20_create_sub_workflows() {
         "Call payroll setup sub-workflow".to_string(),
         StepType::Custom("SubWorkflow".to_string()),
         HashMap::from([
-                            ("sub_workflow_id".to_string(), json!(payroll_workflow.id.0.to_string())),
+            ("sub_workflow_id".to_string(), json!(payroll_workflow.id.to_string())),
             ("sub_workflow_name".to_string(), json!("Payroll and Benefits Enrollment")),
             ("parameter_mapping".to_string(), json!({
                 "employee_id": "$.employee.id",
@@ -2624,7 +2601,7 @@ fn test_w20_create_sub_workflows() {
     
     // Start the parent workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("employee".to_string(), json!({
+    context.set_variable("employee", json!({
         "id": "EMP-2024-001",
         "full_name": "Jane Smith",
         "email": "jane.smith@example.com",
@@ -2693,7 +2670,7 @@ fn test_w21_version_workflows() {
     let (mut approval_v1, _) = Workflow::new(
         "Purchase Order Approval".to_string(),
         "Standard purchase order approval process".to_string(),
-        v1_metadata.clone(),
+        v1_metadata,
         Some("finance@example.com".to_string()),
     ).expect("Should create workflow");
     
@@ -2925,7 +2902,7 @@ fn test_w21_version_workflows() {
     assert!(approval_v2.metadata.contains_key("change_log"));
     let change_log = approval_v2.metadata.get("change_log").unwrap();
     if let serde_json::Value::Array(changes) = change_log {
-        assert_eq!(changes.len(), 2); // Changes from 1.1 and 2.0
+        assert_eq!(changes.len(), 3); // Three versions worth of changes
     }
 }
 
@@ -3149,14 +3126,14 @@ fn test_w22_workflow_transactions() {
     
     // Start the workflow with transaction context
     let mut context = WorkflowContext::new();
-    context.set_variable("order_id".to_string(), json!("ORD-2024-12345"));
-    context.set_variable("customer_id".to_string(), json!("CUST-789"));
-    context.set_variable("items".to_string(), json!([
+    context.set_variable("order_id", json!("ORD-2024-12345"));
+    context.set_variable("customer_id", json!("CUST-789"));
+    context.set_variable("items", json!([
         {"sku": "PROD-001", "quantity": 2, "price": 99.99},
         {"sku": "PROD-002", "quantity": 1, "price": 149.99}
     ]));
-    context.set_variable("payment_method".to_string(), json!("credit_card"));
-    context.set_variable("transaction_context".to_string(), json!({
+    context.set_variable("payment_method", json!("credit_card"));
+    context.set_variable("transaction_context", json!({
         "correlation_id": "TXN-2024-01-25-001",
         "isolation_level": "read_committed",
         "timeout_seconds": 300
@@ -3416,11 +3393,11 @@ fn test_integration_document_approval_workflow() {
     
     // Start the workflow (W4 - Start Instance)
     let mut context = WorkflowContext::new();
-    context.set_variable("contract_id".to_string(), json!("CONTRACT-2024-001"));
-    context.set_variable("contract_type".to_string(), json!("technology"));
-    context.set_variable("vendor".to_string(), json!("TechCorp Inc"));
-    context.set_variable("contract_value".to_string(), json!(175000));
-    context.set_variable("urgency".to_string(), json!("high"));
+    context.set_variable("contract_id", json!("CONTRACT-2024-001"));
+    context.set_variable("contract_type", json!("technology"));
+    context.set_variable("vendor", json!("TechCorp Inc"));
+    context.set_variable("contract_value", json!(175000));
+    context.set_variable("urgency", json!("high"));
     
     workflow.start(context, Some("procurement@example.com".to_string()))
         .expect("Should start workflow");
@@ -3456,11 +3433,11 @@ fn test_integration_document_approval_workflow() {
         .count();
     assert_eq!(parallel_count, 3);
     
-    // W8 - Verify task assignments (these are pre-assigned to teams)
-    let pre_assigned = workflow.get_pre_assigned_tasks();
-    assert!(pre_assigned.iter().any(|t| t.name == "Legal Review" && t.assigned_to == Some("legal-team@example.com".to_string())));
-    assert!(pre_assigned.iter().any(|t| t.name == "Financial Review" && t.assigned_to == Some("finance-team@example.com".to_string())));
-    assert!(pre_assigned.iter().any(|t| t.name == "Technical Review" && t.assigned_to == Some("tech-team@example.com".to_string())));
+    // W8 - Verify task assignments
+    let assignable = workflow.get_assignable_tasks();
+    assert!(assignable.iter().any(|t| t.name == "Legal Review"));
+    assert!(assignable.iter().any(|t| t.name == "Financial Review"));
+    assert!(assignable.iter().any(|t| t.name == "Technical Review"));
     
     // Verify monitoring capabilities
     let bottlenecks = workflow.get_bottlenecks(Duration::from_secs(0));
@@ -3666,7 +3643,7 @@ fn test_integration_error_recovery_workflow() {
     let handle_error = workflow.add_step(
         "Handle Order Error".to_string(),
         "Coordinate error recovery and compensation".to_string(),
-        StepType::Custom("ErrorHandler".to_string()),
+        StepType::Custom,
         HashMap::from([
             ("error_handler".to_string(), json!(true)),
             ("compensation_strategy".to_string(), json!("reverse_order")),
@@ -3681,14 +3658,14 @@ fn test_integration_error_recovery_workflow() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("order_id".to_string(), json!("ORDER-2024-12345"));
-    context.set_variable("customer_id".to_string(), json!("CUST-98765"));
-    context.set_variable("items".to_string(), json!([
+    context.set_variable("order_id", json!("ORDER-2024-12345"));
+    context.set_variable("customer_id", json!("CUST-98765"));
+    context.set_variable("items", json!([
         {"sku": "WIDGET-001", "quantity": 2, "price": 29.99},
         {"sku": "GADGET-002", "quantity": 1, "price": 49.99}
     ]));
-    context.set_variable("payment_method".to_string(), json!("credit_card"));
-    context.set_variable("total_amount".to_string(), json!(109.97));
+    context.set_variable("payment_method", json!("credit_card"));
+    context.set_variable("total_amount", json!(109.97));
     
     workflow.start(context, Some("order-service@example.com".to_string()))
         .expect("Should start workflow");
@@ -3868,11 +3845,6 @@ fn test_integration_scheduled_batch_processing() {
             ])),
             ("checkpoint_enabled".to_string(), json!(true)),
             ("checkpoint_interval_records".to_string(), json!(50000)),
-            ("performance_metrics".to_string(), json!([
-                "records_transformed",
-                "transformation_duration",
-                "validation_errors_found"
-            ])),
         ]),
         vec![sales_id, crm_id], // Waits for both extracts
         Some(60), // 1 hour timeout
@@ -3973,10 +3945,10 @@ fn test_integration_scheduled_batch_processing() {
     
     // Start the workflow (simulating scheduled trigger)
     let mut context = WorkflowContext::new();
-    context.set_variable("execution_date".to_string(), json!("2024-01-15"));
-    context.set_variable("batch_id".to_string(), json!("BATCH-2024-01-15-02-00"));
-    context.set_variable("triggered_by".to_string(), json!("scheduler"));
-    context.set_variable("schedule_time".to_string(), json!("2024-01-15T02:00:00Z"));
+    context.set_variable("execution_date", json!("2024-01-15"));
+    context.set_variable("batch_id", json!("BATCH-2024-01-15-02-00"));
+    context.set_variable("triggered_by", json!("scheduler"));
+    context.set_variable("schedule_time", json!("2024-01-15T02:00:00Z"));
     
     workflow.start(context, Some("scheduler@example.com".to_string()))
         .expect("Should start workflow");
@@ -4200,9 +4172,9 @@ fn test_w16_parallel_task_execution() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("document_id".to_string(), json!("DOC-2024-001"));
-    context.set_variable("document_name".to_string(), json!("quarterly_report.pdf"));
-    context.set_variable("document_size_mb".to_string(), json!(45));
+    context.set_variable("document_id", json!("DOC-2024-001"));
+    context.set_variable("document_name", json!("quarterly_report.pdf"));
+    context.set_variable("document_size_mb", json!(45));
     
     workflow.start(context, Some("pipeline@example.com".to_string()))
         .expect("Should start workflow");
@@ -4421,10 +4393,10 @@ fn test_w17_exclusive_choice_pattern() {
     
     // Start the workflow
     let mut context = WorkflowContext::new();
-    context.set_variable("applicant_id".to_string(), json!("APP-2024-12345"));
-    context.set_variable("loan_amount".to_string(), json!(25000));
-    context.set_variable("loan_type".to_string(), json!("personal"));
-    context.set_variable("credit_score".to_string(), json!(720)); // Should route to manual review
+    context.set_variable("applicant_id", json!("APP-2024-12345"));
+    context.set_variable("loan_amount", json!(25000));
+    context.set_variable("loan_type", json!("personal"));
+    context.set_variable("credit_score", json!(720)); // Should route to manual review
     
     workflow.start(context, Some("loans@example.com".to_string()))
         .expect("Should start workflow");

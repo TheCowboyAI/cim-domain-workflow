@@ -108,6 +108,17 @@ pub struct StepSkipped {
     pub skipped_at: chrono::DateTime<chrono::Utc>,
 }
 
+/// Step failed
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StepFailed {
+    /// ID of the workflow
+    pub workflow_id: WorkflowId,
+    /// ID of the step
+    pub step_id: StepId,
+    /// Failure reason
+    pub reason: String,
+}
+
 /// Step assignment was changed
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StepAssignmentChanged {

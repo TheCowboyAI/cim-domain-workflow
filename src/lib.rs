@@ -58,6 +58,7 @@ pub mod events;
 pub mod handlers;
 pub mod projections;
 pub mod queries;
+pub mod state_machine;
 pub mod value_objects;
 
 // Legacy workflow engine removed - replaced with proper DDD structure 

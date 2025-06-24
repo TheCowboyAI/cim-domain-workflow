@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Represents the status of a workflow step
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[derive(Default)]
 pub enum StepStatus {
     /// Step is defined but not started
@@ -11,6 +11,8 @@ pub enum StepStatus {
     Pending,
     /// Step is currently executing
     Running,
+    /// Step is currently executing (alias for Running)
+    InProgress,
     /// Step completed successfully
     Completed,
     /// Step failed during execution
@@ -31,7 +33,7 @@ impl StepStatus {
 
     /// Check if this status indicates the step is active
     pub fn is_active(&self) -> bool {
-        matches!(self, StepStatus::Running | StepStatus::WaitingApproval)
+        matches!(self, StepStatus::Running | StepStatus::InProgress | StepStatus::WaitingApproval)
     }
 
     /// Check if this status indicates the step has failed
@@ -46,12 +48,12 @@ impl StepStatus {
 
     /// Check if the step can be completed from this status
     pub fn can_complete(&self) -> bool {
-        matches!(self, StepStatus::Running | StepStatus::WaitingApproval)
+        matches!(self, StepStatus::Running | StepStatus::InProgress | StepStatus::WaitingApproval)
     }
 
     /// Check if the step can be cancelled from this status
     pub fn can_cancel(&self) -> bool {
-        matches!(self, StepStatus::Pending | StepStatus::Running | StepStatus::WaitingApproval)
+        matches!(self, StepStatus::Pending | StepStatus::Running | StepStatus::InProgress | StepStatus::WaitingApproval)
     }
 }
 

@@ -1,10 +1,10 @@
 //! Workflow command handlers
 
 use crate::{
-    aggregate::Workflow,
+    Workflow,
     commands::*,
-    value_objects::*,
     domain_events::WorkflowDomainEvent,
+    value_objects::WorkflowId,
 };
 use cim_domain::{DomainResult, DomainError};
 use std::collections::HashMap;

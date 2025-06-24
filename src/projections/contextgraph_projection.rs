@@ -1,11 +1,11 @@
-//! ContextGraph projection for workflow domain
+//! ContextGraph projection for workflow visualization
 //!
 //! This projection converts workflow aggregates into ContextGraph JSON format
 //! for visualization, analysis, and integration with other systems.
 
 use crate::{
-    aggregate::Workflow,
-    value_objects::*,
+    Workflow,
+    value_objects::{WorkflowStatus, StepStatus, StepType},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -234,9 +234,9 @@ impl WorkflowContextGraph {
             metadata: WorkflowGraphMetadata {
                 status: workflow.status.clone(),
                 created_by: workflow.created_by.clone(),
-                created_at: workflow.created_at,
-                started_at: workflow.started_at,
-                completed_at: workflow.completed_at,
+                created_at: Some(workflow.created_at),
+                started_at: None,
+                completed_at: None,
                 version: workflow.version,
                 properties: workflow.metadata.clone(),
             },

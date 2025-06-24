@@ -26,6 +26,7 @@ pub enum WorkflowDomainEvent {
     StepExecutionCompleted(StepExecutionCompleted),
     StepExecutionFailed(StepExecutionFailed),
     StepSkipped(StepSkipped),
+    StepFailed(StepFailed),
     StepAssignmentChanged(StepAssignmentChanged),
     StepDependencyAdded(StepDependencyAdded),
     StepDependencyRemoved(StepDependencyRemoved),
@@ -34,6 +35,12 @@ pub enum WorkflowDomainEvent {
     StepApprovalRequested(StepApprovalRequested),
     StepApprovalGranted(StepApprovalGranted),
     StepApprovalRejected(StepApprovalRejected),
+
+    // Task assignment events
+    TaskStarted(TaskStarted),
+    TaskAssigned(TaskAssigned),
+    TaskReassigned(TaskReassigned),
+    TaskCompleted(TaskCompleted),
 }
 
 impl WorkflowDomainEvent {
@@ -60,6 +67,7 @@ impl WorkflowDomainEvent {
             WorkflowDomainEvent::StepExecutionCompleted(e) => e.workflow_id,
             WorkflowDomainEvent::StepExecutionFailed(e) => e.workflow_id,
             WorkflowDomainEvent::StepSkipped(e) => e.workflow_id,
+            WorkflowDomainEvent::StepFailed(e) => e.workflow_id,
             WorkflowDomainEvent::StepAssignmentChanged(e) => e.workflow_id,
             WorkflowDomainEvent::StepDependencyAdded(e) => e.workflow_id,
             WorkflowDomainEvent::StepDependencyRemoved(e) => e.workflow_id,
@@ -68,6 +76,12 @@ impl WorkflowDomainEvent {
             WorkflowDomainEvent::StepApprovalRequested(e) => e.workflow_id,
             WorkflowDomainEvent::StepApprovalGranted(e) => e.workflow_id,
             WorkflowDomainEvent::StepApprovalRejected(e) => e.workflow_id,
+
+            // Task assignment events
+            WorkflowDomainEvent::TaskStarted(e) => e.workflow_id,
+            WorkflowDomainEvent::TaskAssigned(e) => e.workflow_id,
+            WorkflowDomainEvent::TaskReassigned(e) => e.workflow_id,
+            WorkflowDomainEvent::TaskCompleted(e) => e.workflow_id,
         }
     }
 
@@ -91,6 +105,7 @@ impl WorkflowDomainEvent {
             WorkflowDomainEvent::StepExecutionCompleted(_) => "StepExecutionCompleted",
             WorkflowDomainEvent::StepExecutionFailed(_) => "StepExecutionFailed",
             WorkflowDomainEvent::StepSkipped(_) => "StepSkipped",
+            WorkflowDomainEvent::StepFailed(_) => "StepFailed",
             WorkflowDomainEvent::StepAssignmentChanged(_) => "StepAssignmentChanged",
             WorkflowDomainEvent::StepDependencyAdded(_) => "StepDependencyAdded",
             WorkflowDomainEvent::StepDependencyRemoved(_) => "StepDependencyRemoved",
@@ -99,6 +114,10 @@ impl WorkflowDomainEvent {
             WorkflowDomainEvent::StepApprovalRequested(_) => "StepApprovalRequested",
             WorkflowDomainEvent::StepApprovalGranted(_) => "StepApprovalGranted",
             WorkflowDomainEvent::StepApprovalRejected(_) => "StepApprovalRejected",
+            WorkflowDomainEvent::TaskStarted(_) => "TaskStarted",
+            WorkflowDomainEvent::TaskAssigned(_) => "TaskAssigned",
+            WorkflowDomainEvent::TaskReassigned(_) => "TaskReassigned",
+            WorkflowDomainEvent::TaskCompleted(_) => "TaskCompleted",
         }
     }
 } 

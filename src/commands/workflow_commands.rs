@@ -1,7 +1,7 @@
-//! Workflow commands
+//! Workflow command definitions
 
 use crate::value_objects::{WorkflowId, WorkflowContext};
-use crate::aggregate::Workflow;
+use crate::Workflow;
 use cim_domain::Command;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

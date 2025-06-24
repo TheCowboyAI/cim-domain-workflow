@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use cim_domain::{DomainError, DomainResult};
 
 /// Represents the status of a workflow
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum WorkflowStatus {
     /// Workflow is defined but not started
     Draft,
