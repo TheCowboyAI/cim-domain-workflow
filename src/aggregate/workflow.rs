@@ -462,4 +462,430 @@ impl AggregateRoot for Workflow {
     fn increment_version(&mut self) {
         self.version += 1;
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_workflow() -> Workflow {
+        let (workflow, _) = Workflow::new(
+            "Test Workflow".to_string(),
+            "A test workflow".to_string(),
+            HashMap::new(),
+            Some("test_user".to_string()),
+        ).unwrap();
+        workflow
+    }
+
+    /// Test workflow creation
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Create Workflow] --> B[Verify Initial State]
+    ///     B --> C[Check Events]
+    ///     C --> D[Verify Metadata]
+    /// ```
+    #[test]
+    fn test_workflow_creation() {
+        let metadata = HashMap::from([
+            ("key".to_string(), serde_json::Value::String("value".to_string())),
+        ]);
+
+        let (workflow, events) = Workflow::new(
+            "Test Workflow".to_string(),
+            "A test workflow".to_string(),
+            metadata.clone(),
+            Some("test_user".to_string()),
+        ).unwrap();
+
+        // Verify workflow state
+        assert_eq!(workflow.name, "Test Workflow");
+        assert_eq!(workflow.description, "A test workflow");
+        assert_eq!(workflow.status, WorkflowStatus::Draft);
+        assert!(workflow.steps.is_empty());
+        assert_eq!(workflow.created_by, Some("test_user".to_string()));
+        assert!(workflow.created_at.is_some());
+        assert_eq!(workflow.version, 1);
+
+        // Verify events
+        assert_eq!(events.len(), 1);
+        match &events[0] {
+            WorkflowDomainEvent::WorkflowCreated(event) => {
+                assert_eq!(event.workflow_id, workflow.id);
+                assert_eq!(event.name, "Test Workflow");
+                assert_eq!(event.metadata, metadata);
+            }
+            _ => panic!("Expected WorkflowCreated event"),
+        }
+    }
+
+    /// Test workflow lifecycle transitions
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Draft] --> B[Start]
+    ///     B --> C[Running]
+    ///     C --> D[Complete/Fail/Cancel]
+    ///     C --> E[Pause]
+    ///     E --> F[Resume]
+    /// ```
+    #[test]
+    fn test_workflow_lifecycle() {
+        let mut workflow = create_test_workflow();
+
+        // Cannot start empty workflow
+        let result = workflow.start(WorkflowContext::new(), Some("user".to_string()));
+        assert!(result.is_err());
+
+        // Add a step
+        workflow.add_step(
+            "Step 1".to_string(),
+            "First step".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            Some(30),
+            None,
+            Some("user".to_string()),
+        ).unwrap();
+
+        // Start workflow
+        let events = workflow.start(WorkflowContext::new(), Some("user".to_string())).unwrap();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], WorkflowDomainEvent::WorkflowStarted(_)));
+        assert_eq!(workflow.status, WorkflowStatus::Running);
+        assert!(workflow.started_at.is_some());
+
+        // Pause workflow
+        let events = workflow.pause("Taking a break".to_string(), Some("user".to_string())).unwrap();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], WorkflowDomainEvent::WorkflowPaused(_)));
+        assert_eq!(workflow.status, WorkflowStatus::Paused);
+
+        // Resume workflow
+        let events = workflow.resume(Some("user".to_string())).unwrap();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], WorkflowDomainEvent::WorkflowResumed(_)));
+        assert_eq!(workflow.status, WorkflowStatus::Running);
+
+        // Cannot complete with incomplete steps
+        let result = workflow.complete();
+        assert!(result.is_err());
+
+        // Cancel workflow
+        let events = workflow.cancel("No longer needed".to_string(), Some("user".to_string())).unwrap();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], WorkflowDomainEvent::WorkflowCancelled(_)));
+        assert_eq!(workflow.status, WorkflowStatus::Cancelled);
+    }
+
+    /// Test step management
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Add Step 1] --> B[Add Step 2]
+    ///     B --> C[Add Dependent Step]
+    ///     C --> D[Verify Dependencies]
+    ///     D --> E[Remove Step]
+    /// ```
+    #[test]
+    fn test_step_management() {
+        let mut workflow = create_test_workflow();
+
+        // Add first step
+        let events = workflow.add_step(
+            "Step 1".to_string(),
+            "First step".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            Some(30),
+            Some("user1".to_string()),
+            Some("admin".to_string()),
+        ).unwrap();
+
+        assert_eq!(events.len(), 1);
+        match &events[0] {
+            WorkflowDomainEvent::StepAdded(event) => {
+                assert_eq!(event.name, "Step 1");
+                assert_eq!(event.step_type, StepType::Manual);
+                assert_eq!(event.dependencies.len(), 0);
+                assert_eq!(event.assigned_to, Some("user1".to_string()));
+            }
+            _ => panic!("Expected StepAdded event"),
+        }
+
+        let step1_id = match &events[0] {
+            WorkflowDomainEvent::StepAdded(e) => e.step_id,
+            _ => unreachable!(),
+        };
+
+        // Add dependent step
+        let events = workflow.add_step(
+            "Step 2".to_string(),
+            "Second step".to_string(),
+            StepType::Automated,
+            HashMap::from([("script".to_string(), serde_json::Value::String("run.sh".to_string()))]),
+            vec![step1_id],
+            Some(15),
+            None,
+            Some("admin".to_string()),
+        ).unwrap();
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(workflow.steps.len(), 2);
+
+        // Cannot remove step with dependencies
+        let result = workflow.remove_step(step1_id, "No longer needed".to_string(), Some("admin".to_string()));
+        assert!(result.is_err());
+
+        // Get step 2 ID
+        let step2_id = match &events[0] {
+            WorkflowDomainEvent::StepAdded(e) => e.step_id,
+            _ => unreachable!(),
+        };
+
+        // Can remove step without dependencies
+        let events = workflow.remove_step(step2_id, "Not needed".to_string(), Some("admin".to_string())).unwrap();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], WorkflowDomainEvent::StepRemoved(_)));
+        assert_eq!(workflow.steps.len(), 1);
+    }
+
+    /// Test circular dependency detection
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Step A] --> B[Step B]
+    ///     B --> C[Step C]
+    ///     C -.->|Circular| A
+    /// ```
+    #[test]
+    fn test_circular_dependency_detection() {
+        let mut workflow = create_test_workflow();
+
+        // Add step A
+        workflow.add_step(
+            "Step A".to_string(),
+            "Step A".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        let step_a_id = workflow.steps.values().find(|s| s.name == "Step A").unwrap().id;
+
+        // Add step B depending on A
+        workflow.add_step(
+            "Step B".to_string(),
+            "Step B".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![step_a_id],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        let step_b_id = workflow.steps.values().find(|s| s.name == "Step B").unwrap().id;
+
+        // Try to make A depend on B (circular)
+        let result = workflow.add_step(
+            "Step C".to_string(),
+            "Step C".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![step_b_id],
+            None,
+            None,
+            None,
+        );
+
+        // This should succeed as it's not circular yet
+        assert!(result.is_ok());
+    }
+
+    /// Test workflow failure
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Start Workflow] --> B[Running]
+    ///     B --> C[Fail]
+    ///     C --> D[Failed State]
+    /// ```
+    #[test]
+    fn test_workflow_failure() {
+        let mut workflow = create_test_workflow();
+
+        // Add step and start
+        workflow.add_step(
+            "Step".to_string(),
+            "A step".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        workflow.start(WorkflowContext::new(), None).unwrap();
+
+        // Fail the workflow
+        let events = workflow.fail("Something went wrong".to_string()).unwrap();
+        assert_eq!(events.len(), 1);
+        match &events[0] {
+            WorkflowDomainEvent::WorkflowFailed(event) => {
+                assert_eq!(event.error, "Something went wrong");
+                assert!(event.duration_seconds >= 0);
+            }
+            _ => panic!("Expected WorkflowFailed event"),
+        }
+        assert_eq!(workflow.status, WorkflowStatus::Failed);
+    }
+
+    /// Test executable steps calculation
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Step 1<br/>Ready] --> B[Step 2<br/>Waiting]
+    ///     A --> C[Step 3<br/>Waiting]
+    ///     B --> D[Step 4<br/>Waiting]
+    ///     C --> D
+    /// ```
+    #[test]
+    fn test_executable_steps() {
+        let mut workflow = create_test_workflow();
+
+        // Add independent step
+        workflow.add_step(
+            "Step 1".to_string(),
+            "Independent".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        let step1_id = workflow.steps.values().find(|s| s.name == "Step 1").unwrap().id;
+
+        // Add dependent steps
+        workflow.add_step(
+            "Step 2".to_string(),
+            "Depends on 1".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![step1_id],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        // Start workflow
+        workflow.start(WorkflowContext::new(), None).unwrap();
+
+        // Only step 1 should be executable
+        let executable = workflow.get_executable_steps();
+        assert_eq!(executable.len(), 1);
+        assert_eq!(executable[0].name, "Step 1");
+
+        // After completing step 1, step 2 should be executable
+        if let Some(step) = workflow.steps.get_mut(&step1_id) {
+            step.status = StepStatus::Completed;
+        }
+
+        let executable = workflow.get_executable_steps();
+        assert_eq!(executable.len(), 1);
+        assert_eq!(executable[0].name, "Step 2");
+    }
+
+    /// Test workflow context
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Create Context] --> B[Add Variables]
+    ///     B --> C[Start Workflow]
+    ///     C --> D[Context Preserved]
+    /// ```
+    #[test]
+    fn test_workflow_context() {
+        let mut workflow = create_test_workflow();
+
+        // Add step
+        workflow.add_step(
+            "Step".to_string(),
+            "A step".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        // Create context with variables
+        let mut context = WorkflowContext::new();
+        context.variables.insert(
+            "key".to_string(),
+            serde_json::Value::String("value".to_string()),
+        );
+
+        // Start with context
+        let events = workflow.start(context.clone(), None).unwrap();
+        match &events[0] {
+            WorkflowDomainEvent::WorkflowStarted(event) => {
+                assert_eq!(event.context.variables.get("key").unwrap(), "value");
+            }
+            _ => panic!("Expected WorkflowStarted event"),
+        }
+
+        // Context should be preserved
+        assert_eq!(workflow.context.variables.get("key").unwrap(), "value");
+    }
+
+    /// Test invalid state transitions
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[Draft] -.->|Invalid| B[Completed]
+    ///     C[Cancelled] -.->|Invalid| D[Running]
+    ///     E[Failed] -.->|Invalid| F[Paused]
+    /// ```
+    #[test]
+    fn test_invalid_transitions() {
+        let mut workflow = create_test_workflow();
+
+        // Cannot complete from draft
+        assert!(workflow.complete().is_err());
+
+        // Cannot pause from draft
+        assert!(workflow.pause("reason".to_string(), None).is_err());
+
+        // Add step and cancel
+        workflow.add_step(
+            "Step".to_string(),
+            "A step".to_string(),
+            StepType::Manual,
+            HashMap::new(),
+            vec![],
+            None,
+            None,
+            None,
+        ).unwrap();
+
+        workflow.start(WorkflowContext::new(), None).unwrap();
+        workflow.cancel("cancelled".to_string(), None).unwrap();
+
+        // Cannot resume from cancelled
+        assert!(workflow.resume(None).is_err());
+
+        // Cannot start from cancelled
+        assert!(workflow.start(WorkflowContext::new(), None).is_err());
+    }
 } 

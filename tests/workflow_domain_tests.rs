@@ -4,7 +4,7 @@ use cim_domain_workflow::{
     aggregate::Workflow,
     commands::*,
     value_objects::*,
-    handlers::WorkflowCommandHandler,
+    handlers::{WorkflowCommandHandler, WorkflowCommandHandlerImpl},
 };
 use cim_domain::{CommandEnvelope, CommandStatus};
 use std::collections::HashMap;
@@ -27,7 +27,7 @@ fn test_workflow_creation() {
 /// Test command handler
 #[test]
 fn test_command_handler() {
-    let mut handler = WorkflowCommandHandler::new();
+    let mut handler = WorkflowCommandHandlerImpl::new();
     
     let command = CreateWorkflow {
         name: "Test Workflow".to_string(),
@@ -36,12 +36,11 @@ fn test_command_handler() {
         created_by: Some("test-user".to_string()),
     };
     
-    let envelope = CommandEnvelope::new(command, "test-user".to_string());
-    let result = handler.handle_create_workflow(envelope);
+    let result = handler.handle_create_workflow(command);
     
     assert!(result.is_ok());
-    let ack = result.unwrap();
-    assert_eq!(ack.status, CommandStatus::Accepted);
+    let events = result.unwrap();
+    assert!(!events.is_empty());
 }
 
 /// Test step management
