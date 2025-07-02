@@ -22,3 +22,7 @@ chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4"
+
+[[example]]
+name = "state_machine_demo"
+path = "examples/state_machine_demo.rs"

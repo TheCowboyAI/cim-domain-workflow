@@ -209,13 +209,6 @@ impl Workflow {
 
     /// Complete workflow execution
     pub fn complete(&mut self) -> DomainResult<Vec<WorkflowDomainEvent>> {
-        if !self.status.can_transition_to(&WorkflowStatus::Completed) {
-            return Err(DomainError::generic(format!(
-                "Cannot complete workflow in status {:?}",
-                self.status
-            )));
-        }
-
         // Check if all steps are completed
         let incomplete_steps: Vec<_> = self.steps
             .values()
@@ -229,112 +222,204 @@ impl Workflow {
             )));
         }
 
-        let now = chrono::Utc::now();
-        let duration_seconds = (now - self.created_at).num_seconds() as u64;
+        // Use state machine for transition
+        if let Some(ref mut state_machine) = self.state_machine {
+            let (new_status, events) = state_machine.transition(
+                WorkflowTransition::Complete,
+                &mut self.context
+            )?;
 
-        let event = WorkflowCompleted {
-            workflow_id: self.id,
-            final_context: self.context.clone(),
-            completed_at: now,
-            duration_seconds,
-        };
+            self.status = new_status;
+            self.updated_at = chrono::Utc::now();
 
-        self.apply_workflow_completed(&event)?;
+            Ok(events)
+        } else {
+            // Fallback to old behavior
+            if !self.status.can_transition_to(&WorkflowStatus::Completed) {
+                return Err(DomainError::generic(format!(
+                    "Cannot complete workflow in status {:?}",
+                    self.status
+                )));
+            }
 
-        Ok(vec![WorkflowDomainEvent::WorkflowCompleted(event)])
+            let now = chrono::Utc::now();
+            let duration_seconds = (now - self.created_at).num_seconds() as u64;
+
+            let event = WorkflowCompleted {
+                workflow_id: self.id,
+                final_context: self.context.clone(),
+                completed_at: now,
+                duration_seconds,
+            };
+
+            self.apply_workflow_completed(&event)?;
+
+            Ok(vec![WorkflowDomainEvent::WorkflowCompleted(event)])
+        }
     }
 
     /// Fail workflow execution
     pub fn fail(&mut self, error: String) -> DomainResult<Vec<WorkflowDomainEvent>> {
-        if !self.status.can_transition_to(&WorkflowStatus::Failed) {
-            return Err(DomainError::generic(format!(
-                "Cannot fail workflow in status {:?}",
-                self.status
-            )));
+        // Use state machine for transition
+        if let Some(ref mut state_machine) = self.state_machine {
+            let (new_status, events) = state_machine.transition(
+                WorkflowTransition::Fail { reason: error.clone() },
+                &mut self.context
+            )?;
+
+            self.status = new_status;
+            self.updated_at = chrono::Utc::now();
+
+            Ok(events)
+        } else {
+            // Fallback to old behavior
+            if !self.status.can_transition_to(&WorkflowStatus::Failed) {
+                return Err(DomainError::generic(format!(
+                    "Cannot fail workflow in status {:?}",
+                    self.status
+                )));
+            }
+
+            let now = chrono::Utc::now();
+            let duration_seconds = (now - self.created_at).num_seconds() as u64;
+
+            let event = WorkflowFailed {
+                workflow_id: self.id,
+                error,
+                failure_context: self.context.clone(),
+                failed_at: now,
+                duration_seconds,
+            };
+
+            self.apply_workflow_failed(&event)?;
+
+            Ok(vec![WorkflowDomainEvent::WorkflowFailed(event)])
         }
-
-        let now = chrono::Utc::now();
-        let duration_seconds = (now - self.created_at).num_seconds() as u64;
-
-        let event = WorkflowFailed {
-            workflow_id: self.id,
-            error,
-            failure_context: self.context.clone(),
-            failed_at: now,
-            duration_seconds,
-        };
-
-        self.apply_workflow_failed(&event)?;
-
-        Ok(vec![WorkflowDomainEvent::WorkflowFailed(event)])
     }
 
     /// Pause workflow execution
     pub fn pause(&mut self, reason: String, paused_by: Option<String>) -> DomainResult<Vec<WorkflowDomainEvent>> {
-        if !self.status.can_transition_to(&WorkflowStatus::Paused) {
-            return Err(DomainError::generic(format!(
-                "Cannot pause workflow in status {:?}",
-                self.status
-            )));
+        // Pass paused_by through context
+        if let Some(ref user) = paused_by {
+            self.context.set_variable("_paused_by".to_string(), serde_json::json!(user));
         }
 
-        let now = chrono::Utc::now();
-        let event = WorkflowPaused {
-            workflow_id: self.id,
-            reason,
-            pause_context: self.context.clone(),
-            paused_by,
-            paused_at: now,
-        };
+        // Use state machine for transition
+        if let Some(ref mut state_machine) = self.state_machine {
+            let (new_status, events) = state_machine.transition(
+                WorkflowTransition::Pause { reason: reason.clone() },
+                &mut self.context
+            )?;
 
-        self.apply_workflow_paused(&event)?;
+            self.status = new_status;
+            self.updated_at = chrono::Utc::now();
 
-        Ok(vec![WorkflowDomainEvent::WorkflowPaused(event)])
+            Ok(events)
+        } else {
+            // Fallback to old behavior
+            if !self.status.can_transition_to(&WorkflowStatus::Paused) {
+                return Err(DomainError::generic(format!(
+                    "Cannot pause workflow in status {:?}",
+                    self.status
+                )));
+            }
+
+            let now = chrono::Utc::now();
+            let event = WorkflowPaused {
+                workflow_id: self.id,
+                reason,
+                pause_context: self.context.clone(),
+                paused_by,
+                paused_at: now,
+            };
+
+            self.apply_workflow_paused(&event)?;
+
+            Ok(vec![WorkflowDomainEvent::WorkflowPaused(event)])
+        }
     }
 
     /// Resume workflow execution
     pub fn resume(&mut self, resumed_by: Option<String>) -> DomainResult<Vec<WorkflowDomainEvent>> {
-        if !self.status.can_transition_to(&WorkflowStatus::Running) {
-            return Err(DomainError::generic(format!(
-                "Cannot resume workflow in status {:?}",
-                self.status
-            )));
+        // Pass resumed_by through context
+        if let Some(ref user) = resumed_by {
+            self.context.set_variable("_resumed_by".to_string(), serde_json::json!(user));
         }
 
-        let now = chrono::Utc::now();
-        let event = WorkflowResumed {
-            workflow_id: self.id,
-            resume_context: self.context.clone(),
-            resumed_by,
-            resumed_at: now,
-        };
+        // Use state machine for transition
+        if let Some(ref mut state_machine) = self.state_machine {
+            let (new_status, events) = state_machine.transition(
+                WorkflowTransition::Resume,
+                &mut self.context
+            )?;
 
-        self.apply_workflow_resumed(&event)?;
+            self.status = new_status;
+            self.updated_at = chrono::Utc::now();
 
-        Ok(vec![WorkflowDomainEvent::WorkflowResumed(event)])
+            Ok(events)
+        } else {
+            // Fallback to old behavior
+            if !self.status.can_transition_to(&WorkflowStatus::Running) {
+                return Err(DomainError::generic(format!(
+                    "Cannot resume workflow in status {:?}",
+                    self.status
+                )));
+            }
+
+            let now = chrono::Utc::now();
+            let event = WorkflowResumed {
+                workflow_id: self.id,
+                resume_context: self.context.clone(),
+                resumed_by,
+                resumed_at: now,
+            };
+
+            self.apply_workflow_resumed(&event)?;
+
+            Ok(vec![WorkflowDomainEvent::WorkflowResumed(event)])
+        }
     }
 
     /// Cancel workflow execution
     pub fn cancel(&mut self, reason: String, cancelled_by: Option<String>) -> DomainResult<Vec<WorkflowDomainEvent>> {
-        if !self.status.can_transition_to(&WorkflowStatus::Cancelled) {
-            return Err(DomainError::generic(format!(
-                "Cannot cancel workflow in status {:?}",
-                self.status
-            )));
+        // Pass cancelled_by through context
+        if let Some(ref user) = cancelled_by {
+            self.context.set_variable("_cancelled_by".to_string(), serde_json::json!(user));
         }
 
-        let now = chrono::Utc::now();
-        let event = WorkflowCancelled {
-            workflow_id: self.id,
-            reason,
-            cancellation_context: self.context.clone(),
-            cancelled_by,
-            cancelled_at: now,
-        };
+        // Use state machine for transition
+        if let Some(ref mut state_machine) = self.state_machine {
+            let (new_status, events) = state_machine.transition(
+                WorkflowTransition::Cancel { reason: reason.clone() },
+                &mut self.context
+            )?;
 
-        self.apply_workflow_cancelled(&event)?;
+            self.status = new_status;
+            self.updated_at = chrono::Utc::now();
 
-        Ok(vec![WorkflowDomainEvent::WorkflowCancelled(event)])
+            Ok(events)
+        } else {
+            // Fallback to old behavior
+            if !self.status.can_transition_to(&WorkflowStatus::Cancelled) {
+                return Err(DomainError::generic(format!(
+                    "Cannot cancel workflow in status {:?}",
+                    self.status
+                )));
+            }
+
+            let now = chrono::Utc::now();
+            let event = WorkflowCancelled {
+                workflow_id: self.id,
+                reason,
+                cancellation_context: self.context.clone(),
+                cancelled_by,
+                cancelled_at: now,
+            };
+
+            self.apply_workflow_cancelled(&event)?;
+
+            Ok(vec![WorkflowDomainEvent::WorkflowCancelled(event)])
+        }
     }
 
     /// Add a step to the workflow
@@ -991,47 +1076,121 @@ impl Workflow {
         statuses
     }
 
-    /// Execute a specific step
+    /// Execute a workflow step
     pub fn execute_step(&mut self, step_id: StepId) -> DomainResult<Vec<WorkflowDomainEvent>> {
-        // First check if step exists and can be executed
-        let (_step_name, step_type, can_execute) = {
+        if !self.status.is_active() {
+            return Err(DomainError::generic("Workflow is not active"));
+        }
+
+        // Get step info and validate
+        let (step_type, dependencies, config) = {
             let step = self.steps.get(&step_id)
                 .ok_or_else(|| DomainError::generic("Step not found"))?;
 
-            // Validate step can be executed
-            if step.status != StepStatus::Pending {
-                return Err(DomainError::generic(format!(
-                    "Step {} is not in pending status",
-                    step.name
-                )));
+            if !step.can_execute(&self.get_completed_step_ids()) {
+                return Err(DomainError::generic("Step dependencies not met"));
             }
 
-            // Check if dependencies are met
-            let completed_step_ids: Vec<StepId> = self.steps
-                .values()
-                .filter(|s| s.is_completed())
-                .map(|s| s.id)
-                .collect();
-
-            (step.name.clone(), step.step_type.clone(), step.can_execute(&completed_step_ids))
+            (step.step_type.clone(), step.dependencies.clone(), step.config.clone())
         };
 
-        if !can_execute {
-            return Err(DomainError::generic("Step dependencies not met"));
+        // Get completed dependencies before mutable borrows
+        let completed_dependencies = self.get_completed_step_ids();
+
+        // Use step state machine if available
+        if let Some(step_machine) = self.step_state_machines.get_mut(&step_id) {
+            // Build step context
+            let mut step_context = crate::state_machine::step_state_machine::StepContext {
+                step_id,
+                step_type: step_type.clone(),
+                dependencies,
+                completed_dependencies,
+                metadata: config,
+            };
+            
+            // Add workflow_id to context
+            step_context.metadata.insert(
+                "workflow_id".to_string(),
+                serde_json::json!(self.id.as_uuid().to_string())
+            );
+
+            // Execute the transition
+            let (new_status, mut events) = step_machine.transition(
+                crate::state_machine::step_state_machine::StepTransition::Start { 
+                    executor: Some("system".to_string()) 
+                },
+                &mut step_context
+            )?;
+
+            // Update the step status
+            if let Some(step) = self.steps.get_mut(&step_id) {
+                step.status = new_status;
+                step.started_at = Some(chrono::Utc::now());
+            }
+
+            // For automated steps, immediately complete them
+            if matches!(step_type, StepType::Automated) {
+                let (completed_status, complete_events) = step_machine.transition(
+                    crate::state_machine::step_state_machine::StepTransition::Complete { 
+                        output: Some(serde_json::json!({ "executed": true }))
+                    },
+                    &mut step_context
+                )?;
+
+                if let Some(step) = self.steps.get_mut(&step_id) {
+                    step.status = completed_status;
+                    step.completed_at = Some(chrono::Utc::now());
+                }
+
+                events.extend(complete_events);
+            }
+
+            self.updated_at = chrono::Utc::now();
+            Ok(events)
+        } else {
+            // Fallback to old behavior
+            let mut events = Vec::new();
+
+            // Start the step
+            let now = chrono::Utc::now();
+            let start_event = TaskStarted {
+                workflow_id: self.id,
+                step_id,
+                started_by: Some("system".to_string()),
+                started_at: now,
+            };
+
+            if let Some(step) = self.steps.get_mut(&step_id) {
+                step.status = StepStatus::Running;
+                step.started_at = Some(now);
+            }
+
+            events.push(WorkflowDomainEvent::TaskStarted(start_event));
+
+            // For automated steps, immediately complete them
+            if matches!(step_type, StepType::Automated) {
+                let complete_event = TaskCompleted {
+                    workflow_id: self.id,
+                    step_id,
+                    completed_by: "system".to_string(),
+                    completion_data: HashMap::from([
+                        ("executed".to_string(), serde_json::json!(true))
+                    ]),
+                    completed_at: now,
+                    duration_seconds: 0,
+                };
+
+                if let Some(step) = self.steps.get_mut(&step_id) {
+                    step.status = StepStatus::Completed;
+                    step.completed_at = Some(now);
+                }
+
+                events.push(WorkflowDomainEvent::TaskCompleted(complete_event));
+            }
+
+            self.updated_at = now;
+            Ok(events)
         }
-
-        // Now get mutable reference and execute
-        let step = self.steps.get_mut(&step_id).unwrap();
-        
-        // Start the step
-        step.start_execution()?;
-
-        // For automated steps, immediately complete
-        if matches!(step_type, StepType::Automated) {
-            step.complete()?;
-        }
-
-        Ok(vec![])
     }
 
     /// Execute all steps that are ready to run
@@ -1137,6 +1296,15 @@ impl Workflow {
         self.updated_at = event.removed_at;
         self.version += 1;
         Ok(())
+    }
+
+    /// Get IDs of all completed steps
+    fn get_completed_step_ids(&self) -> Vec<StepId> {
+        self.steps
+            .values()
+            .filter(|step| step.is_completed())
+            .map(|step| step.id)
+            .collect()
     }
 }
 
@@ -1436,7 +1604,7 @@ mod tests {
         assert_eq!(events.len(), 1);
         match &events[0] {
             WorkflowDomainEvent::WorkflowFailed(event) => {
-                assert_eq!(event.error, "Something went wrong");
+                assert_eq!(event.error, "Failed from Running: Something went wrong");
                 // Duration is always non-negative by definition (u64)
             }
             _ => panic!("Expected WorkflowFailed event"),
