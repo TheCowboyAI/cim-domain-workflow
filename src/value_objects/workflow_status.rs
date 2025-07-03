@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use cim_domain::{DomainError, DomainResult};
+use std::fmt;
 
 /// Represents the status of a workflow
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -18,6 +19,19 @@ pub enum WorkflowStatus {
     Paused,
     /// Workflow was cancelled
     Cancelled,
+}
+
+impl fmt::Display for WorkflowStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WorkflowStatus::Draft => write!(f, "Draft"),
+            WorkflowStatus::Running => write!(f, "Running"),
+            WorkflowStatus::Completed => write!(f, "Completed"),
+            WorkflowStatus::Failed => write!(f, "Failed"),
+            WorkflowStatus::Paused => write!(f, "Paused"),
+            WorkflowStatus::Cancelled => write!(f, "Cancelled"),
+        }
+    }
 }
 
 impl WorkflowStatus {

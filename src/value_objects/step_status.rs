@@ -1,6 +1,7 @@
 //! Step status value object
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 /// Represents the status of a workflow step
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -23,6 +24,21 @@ pub enum StepStatus {
     Cancelled,
     /// Step is waiting for approval
     WaitingApproval,
+}
+
+impl fmt::Display for StepStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            StepStatus::Pending => write!(f, "Pending"),
+            StepStatus::Running => write!(f, "Running"),
+            StepStatus::InProgress => write!(f, "InProgress"),
+            StepStatus::Completed => write!(f, "Completed"),
+            StepStatus::Failed => write!(f, "Failed"),
+            StepStatus::Skipped => write!(f, "Skipped"),
+            StepStatus::Cancelled => write!(f, "Cancelled"),
+            StepStatus::WaitingApproval => write!(f, "WaitingApproval"),
+        }
+    }
 }
 
 impl StepStatus {

@@ -2,6 +2,12 @@
 
 use cim_domain::{DomainResult};
 
+/// Type alias for guard function
+type GuardFn<T> = Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync>;
+
+/// Type alias for effect function
+type EffectFn<T, E> = Box<dyn Fn(&mut T) -> Vec<E> + Send + Sync>;
+
 /// Guard condition for state transitions
 pub trait TransitionGuard<T>: Send + Sync {
     /// Check if the transition is allowed
@@ -19,12 +25,12 @@ pub struct TransitionRules;
 
 impl TransitionRules {
     /// Create a guard that always passes
-    pub fn always_allow<T: 'static>() -> Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync> {
+    pub fn always_allow<T: 'static>() -> GuardFn<T> {
         Box::new(|_| Ok(()))
     }
 
     /// Create a guard that checks a boolean condition
-    pub fn when<T: 'static, F>(condition: F) -> Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync>
+    pub fn when<T: 'static, F>(condition: F) -> GuardFn<T>
     where
         F: Fn(&T) -> bool + Send + Sync + 'static,
     {
@@ -39,8 +45,8 @@ impl TransitionRules {
 
     /// Create a guard that checks multiple conditions (AND)
     pub fn all_of<T: 'static>(
-        guards: Vec<Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync>>,
-    ) -> Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync> {
+        guards: Vec<GuardFn<T>>,
+    ) -> GuardFn<T> {
         Box::new(move |ctx| {
             for guard in &guards {
                 guard(ctx)?;
@@ -51,8 +57,8 @@ impl TransitionRules {
 
     /// Create a guard that checks any condition (OR)
     pub fn any_of<T: 'static>(
-        guards: Vec<Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync>>,
-    ) -> Box<dyn Fn(&T) -> DomainResult<()> + Send + Sync> {
+        guards: Vec<GuardFn<T>>,
+    ) -> GuardFn<T> {
         Box::new(move |ctx| {
             let mut errors = Vec::new();
             for guard in &guards {
@@ -62,31 +68,32 @@ impl TransitionRules {
                 }
             }
             Err(cim_domain::DomainError::generic(format!(
-                "None of the conditions were met: {:?}",
-                errors
+                "All guards must be satisfied (failed {}/{total})",
+                errors.len(),
+                total = guards.len()
             )))
         })
     }
 
     /// Create an effect that does nothing
-    pub fn no_effect<T: 'static, E: 'static>() -> Box<dyn Fn(&mut T) -> Vec<E> + Send + Sync> {
+    pub fn no_effect<T: 'static, E: 'static>() -> EffectFn<T, E> {
         Box::new(|_| Vec::new())
     }
 
     /// Create an effect that logs a message
     pub fn log_effect<T: 'static, E: 'static>(
         message: String,
-    ) -> Box<dyn Fn(&mut T) -> Vec<E> + Send + Sync> {
+    ) -> EffectFn<T, E> {
         Box::new(move |_| {
-            println!("{}", message);
+            println!("{message}");
             Vec::new()
         })
     }
 
     /// Combine multiple effects
     pub fn combine_effects<T: 'static, E: 'static>(
-        effects: Vec<Box<dyn Fn(&mut T) -> Vec<E> + Send + Sync>>,
-    ) -> Box<dyn Fn(&mut T) -> Vec<E> + Send + Sync> {
+        effects: Vec<EffectFn<T, E>>,
+    ) -> EffectFn<T, E> {
         Box::new(move |ctx| {
             let mut all_events = Vec::new();
             for effect in &effects {

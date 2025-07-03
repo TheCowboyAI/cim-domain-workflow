@@ -425,7 +425,7 @@ fn test_w5_execute_workflow_tasks() {
         
         let events = workflow.add_step(
             name.to_string(),
-            format!("Execute {}", name),
+            format!("Execute {name}"),
             step_type.clone(),
             HashMap::new(),
             dependencies,
@@ -671,7 +671,7 @@ fn test_w7_monitor_workflow_progress() {
         
         let events = workflow.add_step(
             name.to_string(),
-            format!("Execute {}", name),
+            format!("Execute {name}"),
             step_type.clone(),
             HashMap::new(),
             dependencies,
@@ -1413,7 +1413,7 @@ fn test_w11_handle_task_failures() {
     
     // The workflow can be failed when critical steps fail
     let fail_events = workflow.fail(
-        format!("Step '{}' failed: {}", "Call External API", failure_reason),
+        format!("Step '{"Call External API"}' failed: {failure_reason}"),
     ).expect("Should fail workflow");
     
     // Then: Workflow should be in failed state
@@ -1663,7 +1663,7 @@ fn test_w13_rollback_workflow() {
     
     // Cancel the workflow (which should trigger rollback)
     let cancel_events = workflow.cancel(
-        format!("Rollback required: {}", failure_reason),
+        format!("Rollback required: {failure_reason}"),
         Some("system@example.com".to_string()),
     ).expect("Should cancel workflow");
     
@@ -1876,7 +1876,7 @@ fn test_w15_analyze_workflow_performance() {
         
         let events = workflow.add_step(
             name.to_string(),
-            format!("Process step: {}", name),
+            format!("Process step: {name}"),
             step_type.clone(),
             config,
             dependencies,
@@ -2190,7 +2190,7 @@ fn test_w18_loop_pattern() {
     for step_name in loop_steps {
         let step = workflow.steps.values()
             .find(|s| s.name == step_name)
-            .expect(&format!("Should find {} step", step_name));
+            .expect(&format!("Should find {step_name} step"));
         
         // Check for loop-related configuration
         let has_loop_config = step.config.contains_key("loop_entry_point") ||
@@ -4461,7 +4461,7 @@ fn test_w17_exclusive_choice_pattern() {
     for step_name in exclusive_steps {
         let step = workflow.steps.values()
             .find(|s| s.name == step_name)
-            .expect(&format!("Should find {} step", step_name));
+            .expect(&format!("Should find {step_name} step"));
         assert!(step.config.contains_key("condition"));
     }
 } 

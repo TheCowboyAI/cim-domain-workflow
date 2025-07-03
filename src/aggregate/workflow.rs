@@ -81,7 +81,7 @@ impl std::fmt::Debug for Workflow {
 impl Clone for Workflow {
     fn clone(&self) -> Self {
         let mut cloned = Self {
-            id: self.id.clone(),
+            id: self.id,
             name: self.name.clone(),
             description: self.description.clone(),
             status: self.status.clone(),
@@ -900,7 +900,7 @@ impl Workflow {
             Ok(vec![WorkflowDomainEvent::StepFailed(StepFailed {
                 workflow_id: self.id,
                 step_id,
-                reason: format!("Failed after {} retries: {}", max_retries, error),
+                reason: format!("Failed after {max_retries} retries: {error}"),
             })])
         }
     }

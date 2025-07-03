@@ -34,7 +34,7 @@ impl fmt::Display for StepType {
             StepType::Approval => write!(f, "Approval"),
             StepType::Integration => write!(f, "Integration"),
             StepType::Parallel => write!(f, "Parallel"),
-            StepType::Custom(name) => write!(f, "Custom({})", name),
+            StepType::Custom(name) => write!(f, "Custom({name})"),
         }
     }
 }
@@ -173,10 +173,7 @@ impl WorkflowStep {
     /// Start step execution
     pub fn start_execution(&mut self) -> DomainResult<()> {
         if self.status != StepStatus::Pending {
-            return Err(DomainError::generic(format!(
-                "Step {} cannot be started from status {:?}",
-                self.name, self.status
-            )));
+            return Err(DomainError::generic(format!("Step {} cannot be started from status {:?}", self.name, self.status)));
         }
         self.status = StepStatus::Running;
         let now = chrono::Utc::now();
@@ -189,10 +186,7 @@ impl WorkflowStep {
     /// Start step execution with optional assignee
     pub fn start(&mut self, assigned_to: Option<String>) -> DomainResult<()> {
         if self.status != StepStatus::Pending {
-            return Err(DomainError::generic(format!(
-                "Step {} cannot be started from status {:?}",
-                self.name, self.status
-            )));
+            return Err(DomainError::generic(format!("Step {} cannot be started from status {:?}", self.name, self.status)));
         }
         if let Some(assignee) = assigned_to {
             self.assigned_to = Some(assignee);
@@ -231,10 +225,7 @@ impl WorkflowStep {
                 self.config.insert("completed_at".to_string(), serde_json::json!(now.to_rfc3339()));
                 Ok(())
             }
-            _ => Err(DomainError::generic(format!(
-                "Step {} cannot be completed from status {:?}",
-                self.name, self.status
-            )))
+            _ => Err(DomainError::generic(format!("Step {} cannot be completed from status {:?}", self.name, self.status)))
         }
     }
 
@@ -245,10 +236,7 @@ impl WorkflowStep {
             self.config.insert("failure_reason".to_string(), serde_json::Value::String(reason));
             Ok(())
         } else {
-            Err(DomainError::generic(format!(
-                "Step {} cannot be failed from status {:?}",
-                self.name, self.status
-            )))
+            Err(DomainError::generic(format!("Step {} cannot be failed from status {:?}", self.name, self.status)))
         }
     }
 
@@ -259,10 +247,7 @@ impl WorkflowStep {
             self.config.insert("skip_reason".to_string(), serde_json::Value::String(reason));
             Ok(())
         } else {
-            Err(DomainError::generic(format!(
-                "Step {} cannot be skipped from status {:?}",
-                self.name, self.status
-            )))
+            Err(DomainError::generic(format!("Step {} cannot be skipped from status {:?}", self.name, self.status)))
         }
     }
 

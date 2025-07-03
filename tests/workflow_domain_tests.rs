@@ -1,12 +1,12 @@
 //! Integration tests for the Workflow domain
 
+use cim_domain::{CommandEnvelope, CommandStatus};
 use cim_domain_workflow::{
     aggregate::Workflow,
     commands::*,
-    value_objects::*,
     handlers::{WorkflowCommandHandler, WorkflowCommandHandlerImpl},
+    value_objects::*,
 };
-use cim_domain::{CommandEnvelope, CommandStatus};
 use std::collections::HashMap;
 
 /// Test workflow creation
@@ -17,8 +17,9 @@ fn test_workflow_creation() {
         "A test workflow".to_string(),
         HashMap::new(),
         Some("test-user".to_string()),
-    ).unwrap();
-    
+    )
+    .unwrap();
+
     assert_eq!(workflow.name, "Test Workflow");
     assert_eq!(workflow.status, WorkflowStatus::Draft);
     assert_eq!(workflow.steps.len(), 0);
@@ -28,16 +29,16 @@ fn test_workflow_creation() {
 #[test]
 fn test_command_handler() {
     let mut handler = WorkflowCommandHandlerImpl::new();
-    
+
     let command = CreateWorkflow {
         name: "Test Workflow".to_string(),
         description: "A test workflow".to_string(),
         metadata: HashMap::new(),
         created_by: Some("test-user".to_string()),
     };
-    
+
     let result = handler.handle_create_workflow(command);
-    
+
     assert!(result.is_ok());
     let events = result.unwrap();
     assert!(!events.is_empty());
@@ -51,7 +52,7 @@ fn test_step_management() {
         "A test step".to_string(),
         StepType::Manual,
     );
-    
+
     assert_eq!(step.name, "Test Step");
     assert_eq!(step.status, StepStatus::Pending);
     assert!(step.is_completed() == false);
@@ -63,4 +64,4 @@ fn test_step_types() {
     assert!(StepType::Manual.requires_human_intervention());
     assert!(StepType::Automated.can_auto_execute());
     assert!(!StepType::Manual.can_auto_execute());
-} 
+}

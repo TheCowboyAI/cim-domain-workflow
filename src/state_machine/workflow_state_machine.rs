@@ -349,7 +349,7 @@ impl WorkflowStateMachine {
             }
             WorkflowTransition::Fail { reason } => {
                 // Include the state we failed from in the event
-                let enhanced_reason = format!("Failed from {:?}: {}", old_state, reason);
+                let enhanced_reason = format!("Failed from {old_state:?}: {reason}");
                 
                 // Calculate duration before failure
                 let duration_seconds = if let Some(started_at) = context.get_variable("started_at") {
@@ -408,7 +408,7 @@ impl WorkflowStateMachine {
             }
             WorkflowTransition::Cancel { reason } => {
                 // Record what state we cancelled from
-                let enhanced_reason = format!("Cancelled from {:?}: {}", old_state, reason);
+                let enhanced_reason = format!("Cancelled from {old_state:?}: {reason}");
                 
                 WorkflowDomainEvent::WorkflowCancelled(crate::events::WorkflowCancelled {
                     workflow_id: self.workflow_id,
@@ -452,10 +452,7 @@ impl WorkflowStateMachine {
                 WorkflowTransition::Cancel { .. } => "Cancel",
             };
             
-            diagram.push_str(&format!(
-                "    {:?} --> {:?} : {}\n",
-                from_state, config.target_state, transition_label
-            ));
+            diagram.push_str(&format!("    {:?} --> {:?} : {from_state}\n", config.target_state, transition_label));
         }
         
         // Mark terminal states

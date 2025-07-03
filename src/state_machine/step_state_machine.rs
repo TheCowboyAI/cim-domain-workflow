@@ -144,7 +144,7 @@ impl StepStateMachine {
                     
                     if !unmet_deps.is_empty() {
                         Err(DomainError::generic(format!(
-                            "Unmet dependencies: {:?}", unmet_deps
+                            "Unmet dependencies: {unmet_deps:?}"
                         )))
                     } else {
                         Ok(())
@@ -453,7 +453,7 @@ impl StepStateMachine {
                 WorkflowDomainEvent::StepFailed(StepFailed {
                     workflow_id: WorkflowId::new(), // This would need to be passed in context
                     step_id: self.step_id,
-                    reason: format!("Failed from {:?}: {}", old_state, error),
+                    reason: format!("Failed from {old_state:?}: {error}"),
                 })
             }
             StepTransition::RequestApproval { approver } => {
@@ -507,7 +507,7 @@ impl StepStateMachine {
         for ((from_state, transition), config) in &self.transition_table {
             let transition_label = match transition {
                 StepTransition::Start { .. } => "Start".to_string(),
-                StepTransition::Progress { percentage } => format!("Progress({}%)", percentage),
+                StepTransition::Progress { percentage } => format!("Progress({percentage}%)"),
                 StepTransition::RequestApproval { .. } => "Request Approval".to_string(),
                 StepTransition::Approve { .. } => "Approve".to_string(),
                 StepTransition::Reject { .. } => "Reject".to_string(),
@@ -526,9 +526,7 @@ impl StepStateMachine {
         }
         
         for ((from, to), labels) in unique_transitions {
-            diagram.push_str(&format!(
-                "    {:?} --> {:?} : {}\n",
-                from, to, labels.join(", ")
+            diagram.push_str(&format!("    {:?} --> {:?} : {from}\n", to, labels.join(", ")
             ));
         }
         
