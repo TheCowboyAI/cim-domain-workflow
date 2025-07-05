@@ -620,8 +620,7 @@ impl Workflow {
                         // Convert chrono::Duration to std::time::Duration for comparison
                         // Use nanoseconds for maximum precision
                         let elapsed_nanos = elapsed.num_nanoseconds()
-                            .unwrap_or(i64::MAX)
-                            .abs() as u128;
+                            .unwrap_or(i64::MAX).unsigned_abs() as u128;
                         let elapsed_std = std::time::Duration::from_nanos(elapsed_nanos as u64);
                         return elapsed_std >= threshold;
                     }
