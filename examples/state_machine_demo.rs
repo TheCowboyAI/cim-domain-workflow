@@ -21,7 +21,7 @@ fn main() {
         Some("admin".to_string()),
     ).unwrap();
 
-    println!("✅ Created workflow: {workflow.name}");
+    println!("✅ Created workflow: {}", workflow.name);
     println!("📊 Initial state: {:?}\n", workflow.status);
 
     // Add workflow steps
@@ -77,7 +77,7 @@ fn main() {
         Some("admin".to_string()),
     ).unwrap();
 
-    println!("✅ Added {workflow.steps.len(} steps\n"));
+    println!("✅ Added {} steps\n", workflow.steps.len());
 
     // Demonstrate workflow state machine
     println!("🎯 Demonstrating Workflow State Machine:");
@@ -85,13 +85,13 @@ fn main() {
     // Create standalone state machine for visualization
     let state_machine = WorkflowStateMachine::new(workflow.id);
     println!("\n📊 State Machine Diagram:");
-    println!("{state_machine.to_mermaid(}\n"));
+    println!("{}\n", state_machine.to_mermaid());
 
     // Try to start workflow without context (should fail)
     println!("❌ Attempting to start workflow without context...");
     let result = workflow.start(WorkflowContext::new(), Some("user".to_string()));
     match result {
-        Err(e) => println!("   Failed as expected: {e}"),
+        Err(e) => println!("   Failed as expected: {}", e),
         Ok(_) => println!("   Unexpected success!"),
     }
 
@@ -103,7 +103,7 @@ fn main() {
     
     let events = workflow.start(context, Some("user".to_string())).unwrap();
     println!("   State: {:?}", workflow.status);
-    println!("   Events generated: {events.len(}"));
+    println!("   Events generated: {}", events.len());
 
     // Show available transitions
     println!("\n📋 Available transitions from Running state:");
@@ -118,7 +118,7 @@ fn main() {
     println!("   State: {:?}", workflow.status);
     match &events[0] {
         cim_domain_workflow::WorkflowDomainEvent::WorkflowPaused(e) => {
-            println!("   Reason: {e.reason}");
+            println!("   Reason: {}", e.reason);
         }
         _ => {}
     }
@@ -133,9 +133,9 @@ fn main() {
     // Get executable steps
     let first_step_id = {
         let executable_steps = workflow.get_executable_steps();
-        println!("\n📋 Executable steps: {executable_steps.len(}"));
+        println!("\n📋 Executable steps: {}", executable_steps.len());
         for step in &executable_steps {
-            println!("   - {step.name} ({step.step_type})");
+            println!("   - {} ({:?})", step.name, step.step_type);
         }
         
         executable_steps.first().map(|s| (s.id, s.name.clone()))
@@ -143,9 +143,9 @@ fn main() {
 
     // Execute first step
     if let Some((step_id, step_name)) = first_step_id {
-        println!("\n▶️  Executing step: {step_name}");
+        println!("\n▶️  Executing step: {}", step_name);
         let events = workflow.execute_step(step_id).unwrap();
-        println!("   Events generated: {events.len(}"));
+        println!("   Events generated: {}", events.len());
         
         // For manual steps, they need to be completed manually
         println!("\n✅ Completing manual step...");
@@ -156,17 +156,17 @@ fn main() {
                 ("document_url".to_string(), serde_json::json!("https://example.com/doc.pdf")),
             ]),
         ).unwrap();
-        println!("   Step completed with {events.len(} events"));
+        println!("   Step completed with {} events", events.len());
     }
 
     // Show workflow progress
     let progress = workflow.get_progress();
     println!("\n📊 Workflow Progress:");
-    println!("   Total steps: {progress.total_steps}");
-    println!("   Completed: {progress.completed_steps}");
-    println!("   In progress: {progress.in_progress_steps}");
-    println!("   Pending: {progress.pending_steps}");
-    println!("   Failed: {progress.failed_steps}");
+    println!("   Total steps: {}", progress.total_steps);
+    println!("   Completed: {}", progress.completed_steps);
+    println!("   In progress: {}", progress.in_progress_steps);
+    println!("   Pending: {}", progress.pending_steps);
+    println!("   Failed: {}", progress.failed_steps);
     println!("   Progress: {:.1}%", (progress.completed_steps as f64 / progress.total_steps as f64) * 100.0);
 
     // Demonstrate failure handling
@@ -177,8 +177,8 @@ fn main() {
     let events = failing_workflow.fail("Network connection lost".to_string()).unwrap();
     match &events[0] {
         cim_domain_workflow::WorkflowDomainEvent::WorkflowFailed(e) => {
-            println!("   Error: {e.error}");
-            println!("   Duration: {e.duration_seconds} seconds");
+            println!("   Error: {}", e.error);
+            println!("   Duration: {} seconds", e.duration_seconds);
         }
         _ => {}
     }
@@ -186,7 +186,7 @@ fn main() {
     // Show state transition history
     println!("\n📜 State Transition History:");
     if let Some(history) = workflow.context.get_variable("last_state_transition") {
-        println!("   Last transition: {serde_json::to_string_pretty(history}").unwrap());
+        println!("   Last transition: {}", serde_json::to_string_pretty(history).unwrap());
     }
 
     println!("\n✨ Demo completed!");
