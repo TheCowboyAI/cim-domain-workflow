@@ -105,10 +105,14 @@ impl WorkflowStateMachine {
             Start,
             Running,
             vec![
-                // Guard: Must have at least one step
+                // Guard: Must have meaningful context (not just internal metadata)
                 Box::new(|ctx| {
-                    if ctx.variables.is_empty() {
-                        Err(DomainError::generic("Workflow must have context to start"))
+                    // Check if context has any variables other than internal ones (starting with _)
+                    let has_meaningful_context = ctx.variables.iter()
+                        .any(|(key, _)| !key.starts_with('_'));
+                    
+                    if !has_meaningful_context {
+                        Err(DomainError::generic("Workflow must have meaningful context to start"))
                     } else {
                         Ok(())
                     }
@@ -561,6 +565,6 @@ mod tests {
         let result = state_machine.transition(WorkflowTransition::Start, &mut context.clone());
         
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("must have context"));
+        assert!(result.unwrap_err().to_string().contains("must have meaningful context"));
     }
 } 

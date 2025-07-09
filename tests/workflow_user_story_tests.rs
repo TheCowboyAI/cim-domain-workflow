@@ -1413,7 +1413,7 @@ fn test_w11_handle_task_failures() {
     
     // The workflow can be failed when critical steps fail
     let fail_events = workflow.fail(
-        format!("Step '{"Call External API"}' failed: {failure_reason}"),
+        format!("Step 'Call External API' failed: {}", failure_reason),
     ).expect("Should fail workflow");
     
     // Then: Workflow should be in failed state

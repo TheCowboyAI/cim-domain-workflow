@@ -26,3 +26,11 @@ pretty_assertions = "1.4"
 [[example]]
 name = "state_machine_demo"
 path = "examples/state_machine_demo.rs"
+
+[[example]]
+name = "simple_order_workflow"
+path = "examples/simple_order_workflow.rs"
+
+[[example]]
+name = "contextgraph_export"
+path = "examples/contextgraph_export.rs"

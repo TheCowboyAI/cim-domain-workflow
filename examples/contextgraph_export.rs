@@ -22,12 +22,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("📊 Workflow Statistics:");
     let stats = contextgraph.statistics();
-    println!("  • Total nodes: {stats.total_nodes}");
-    println!("  • Step nodes: {stats.step_nodes}");
-    println!("  • Total edges: {stats.total_edges}");
-    println!("  • Dependency edges: {stats.dependency_edges}");
-    println!("  • Max depth: {stats.max_depth}");
-    println!("  • Is cyclic: {stats.is_cyclic}");
+    println!("  • Total nodes: {}", stats.total_nodes);
+    println!("  • Step nodes: {}", stats.step_nodes);
+    println!("  • Total edges: {}", stats.total_edges);
+    println!("  • Dependency edges: {}", stats.dependency_edges);
+    println!("  • Max depth: {}", stats.max_depth);
+    println!("  • Is cyclic: {}", stats.is_cyclic);
     println!();
 
     // Generate JSON export
@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Demonstrate JSON round-trip
     println!("🔄 Testing JSON round-trip...");
     let reconstructed = WorkflowContextGraph::from_json(&json)?;
-    println!("✅ Successfully reconstructed workflow: {reconstructed.name}");
+    println!("✅ Successfully reconstructed workflow: {}", reconstructed.name);
 
     // Show step analysis
     println!("\n📋 Step Analysis:");
@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n🔗 Dependency Analysis:");
     for edge in contextgraph.get_dependency_edges() {
-        println!("  • {edge.source} → {edge.target} ({edge.edge_type})");
+        println!("  • {} → {} ({})", edge.source, edge.target, edge.edge_type);
     }
 
     Ok(())
