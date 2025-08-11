@@ -170,6 +170,53 @@ cargo test test_name
 - Include examples in documentation
 - Explain complex algorithms
 - Document error conditions
+- **Include mermaid diagrams** for complex workflows and architectures
+
+### Mermaid Diagram Standards
+
+All documentation must include appropriate mermaid diagrams following CIM high-contrast styling:
+
+```mermaid
+graph TD
+    A[Documentation Standards] --> B[CIM High Contrast]
+    A --> C[Semantic Color Mapping]
+    A --> D[Accessibility Focus]
+    
+    B --> B1[Coral Red: Primary/Critical]
+    B --> B2[Turquoise: Secondary/Events]
+    B --> B3[Yellow: Choices/Decisions]
+    B --> B4[Mint Green: Results/Success]
+    B --> B5[Charcoal: Start/Root]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,C,D secondary
+    class B1 primary
+    class B2 secondary
+    class B3 choice
+    class B4 result
+    class B5 start
+```
+
+**Required Color Classes:**
+- `primary`: Critical components, errors, commands (#FF6B6B)
+- `secondary`: Events, storage, middleware (#4ECDC4)
+- `choice`: Decisions, conditions, filters (#FFE66D)
+- `result`: Success, outcomes, optimized paths (#95E1D3)
+- `start`: Root nodes, user input, start states (#2D3436)
+
+**When to Include Diagrams:**
+- Architecture overviews
+- Process flows
+- State machines
+- Cross-domain interactions
+- Complex algorithms
+- Data flow patterns
 
 Example:
 ```rust
@@ -194,10 +241,18 @@ pub fn start(&mut self, context: Value, actor: Option<String>) -> DomainResult<V
 ### Module Documentation
 
 Update these files when adding features:
-- `README.md` - User-facing documentation
+- `README.md` - User-facing documentation **with mermaid diagrams**
 - `CHANGELOG.md` - Version history
 - `.claude/*.md` - AI assistance context
 - `doc/progress/progress.json` - Development tracking
+- **All technical documentation** - Must include relevant mermaid visualizations
+
+**Documentation Quality Checklist:**
+- [ ] Includes appropriate mermaid diagrams
+- [ ] Uses CIM high-contrast color scheme
+- [ ] Follows semantic color mapping
+- [ ] Ensures colorblind accessibility
+- [ ] Includes class definitions for styling
 
 ## Architecture Guidelines
 

@@ -7,6 +7,40 @@ You **MUST** understand that this is the **UNIVERSAL WORKFLOW DOMAIN** that serv
 
 ## Core Mission: Universal Workflow Engine
 
+```mermaid
+graph TD
+    A[CIM Ecosystem] --> B[Universal Workflow Engine]
+    B --> C[Document Domain]
+    B --> D[Person Domain]
+    B --> E[Organization Domain]
+    B --> F[Location Domain]
+    B --> G[All Future Domains]
+    
+    C --> H[Document Workflows]
+    D --> I[Person Workflows]
+    E --> J[Org Workflows]
+    F --> K[Location Workflows]
+    G --> L[Domain Extensions]
+    
+    H --> M[Central Nervous System]
+    I --> M
+    J --> M
+    K --> M
+    L --> M
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B primary
+    class C,D,E,F,G secondary
+    class H,I,J,K,L result
+    class M choice
+```
+
 This is the **Universal Workflow Domain** that serves as the central nervous system for the entire CIM ecosystem. EVERYTHING flows through workflows - this is not just another domain, it is THE workflow system that all domains use.
 
 **Module Name**: cim-domain-workflow  
@@ -23,11 +57,67 @@ This is the **Universal Workflow Domain** that serves as the central nervous sys
 - **Mathematical Foundation**: Category Theory-based workflow composition and execution
 
 ### Universal Engine Features
+
+```mermaid
+stateDiagram-v2
+    [*] --> SingleEngine
+    SingleEngine --> DomainComposition
+    DomainComposition --> CrossDomainWorkflows
+    CrossDomainWorkflows --> CIDIntegrity
+    CIDIntegrity --> CategoryTheory
+    CategoryTheory --> [*]
+    
+    state SingleEngine {
+        [*] --> AllDomains
+        AllDomains --> Extensions
+        Extensions --> [*]
+    }
+    
+    state CrossDomainWorkflows {
+        [*] --> EventCorrelation
+        EventCorrelation --> SeamlessFlow
+        SeamlessFlow --> [*]
+    }
+```
+
 - **Single Workflow Engine**: One engine serves all CIM domains through domain extensions
 - **Domain Composition**: Extensible domain integration without inheritance hierarchies
 - **Cross-Domain Workflows**: Seamless workflows spanning multiple domains with event correlation
 - **CID Integrity Chains**: Cryptographic verification of all workflow events
 - **Category Theory Foundation**: Mathematically rigorous workflow composition
+
+## Documentation Standards
+
+### Mermaid Diagram Requirements
+
+**ALL documentation in this repository MUST include appropriate mermaid diagrams** following CIM high-contrast styling:
+
+```mermaid
+graph LR
+    A[Documentation] --> B[Mermaid Required]
+    B --> C[CIM High Contrast]
+    C --> D[Semantic Colors]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B choice
+    class C secondary
+    class D result
+```
+
+**Color Standards:**
+- `primary` (#FF6B6B): Commands, errors, critical components
+- `secondary` (#4ECDC4): Events, storage, middleware
+- `choice` (#FFE66D): Decisions, conditions, filters
+- `result` (#95E1D3): Success, outcomes, results
+- `start` (#2D3436): Root nodes, user input, start states
+
+**Mandatory Usage:** Architecture diagrams, process flows, state machines, cross-domain interactions, and all technical explanations.
 - **NATS Event Correlation**: Standardized event subjects and cross-domain coordination
 - **Extensible Context Framework**: Domain-specific data through compositional extensions
 - **Universal Templates**: Reusable workflow patterns across all domains

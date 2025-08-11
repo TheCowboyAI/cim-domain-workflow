@@ -2,9 +2,51 @@
 
 ## Overview
 
+```mermaid
+gantt
+    title Implementation Roadmap Timeline
+    dateFormat  YYYY-MM-DD
+    section Phase 1: Foundation
+    Core Primitives       :active, p1w1, 2024-01-01, 1w
+    Architecture Setup    :active, p1w2, after p1w1, 1w
+    section Phase 2: Events & Templates
+    Event System         :p2w1, after p1w2, 1w
+    Template System      :p2w2, after p2w1, 1w
+    section Phase 3: Domain Integration
+    Document Domain      :p3w1, after p2w2, 1w
+    Person Domain        :p3w2, after p3w1, 1w
+    section Phase 4: Production
+    Org & Location       :p4w1, after p3w2, 1w
+    Documentation        :p4w2, after p4w1, 1w
+```
+
 This roadmap outlines the practical steps to implement the consolidated workflow domain design, transforming cim-domain-workflow from a single-domain implementation into a shared workflow infrastructure serving all CIM domains.
 
 ## Executive Summary
+
+```mermaid
+graph LR
+    A[8-Week Timeline] --> B[All CIM Domains]
+    B --> C[Single Workflow Engine]
+    C --> D[Domain Extensions]
+    D --> E[Benefits Achieved]
+    
+    E --> F[Reduced Dev Time]
+    E --> G[Consistent UX]
+    E --> H[Cross-Domain Workflows]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,C choice
+    class D secondary
+    class E primary
+    class F,G,H result
+```
 
 - **Timeline**: 8 weeks for full implementation
 - **Impact**: All CIM domains (document, person, organization, location, etc.)
@@ -14,6 +56,22 @@ This roadmap outlines the practical steps to implement the consolidated workflow
 ## Implementation Phases
 
 ### Phase 1: Foundation & Core Infrastructure (Weeks 1-2)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Week1
+    Week1 --> CorePrimitives
+    Week1 --> Architecture
+    CorePrimitives --> UnifiedIDs
+    CorePrimitives --> ExtensibleContext
+    Architecture --> WorkflowEngine
+    Architecture --> StateMachine
+    UnifiedIDs --> Week2
+    ExtensibleContext --> Week2
+    WorkflowEngine --> Week2
+    StateMachine --> Week2
+    Week2 --> [*]
+```
 
 #### Week 1: Core Primitives & Architecture
 

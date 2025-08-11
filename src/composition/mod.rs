@@ -5,6 +5,8 @@
 
 pub mod extensions;
 pub mod templates;
+pub mod template_library;
 
 pub use extensions::*;
 pub use templates::*;
+pub use template_library::*;

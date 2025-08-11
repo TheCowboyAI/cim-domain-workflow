@@ -48,6 +48,9 @@ pub use domain_events::*;
 pub use events::*;
 pub use value_objects::*;
 
+// Re-export new error handling system
+pub use error::*;
+
 // Main exports - use these types from their respective modules
 
 // Domain modules following DDD structure
@@ -67,6 +70,8 @@ pub mod primitives;
 pub mod composition;
 pub mod messaging;
 pub mod algebra;
+pub mod error;
+pub mod observability;
 
 // Backward compatibility layer
 pub mod compatibility;

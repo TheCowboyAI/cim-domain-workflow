@@ -2,9 +2,58 @@
 
 ## Overview
 
-The Workflow domain API provides commands, queries, and events for {domain purpose}.
+```mermaid
+graph TD
+    A[Client Applications] --> B[Workflow API]
+    B --> C[Commands]
+    B --> D[Queries]
+    B --> E[Events]
+    
+    C --> F[CreateWorkflow]
+    C --> G[AddStep]
+    C --> H[StartWorkflow]
+    C --> I[CompleteStep]
+    
+    D --> J[GetWorkflow]
+    D --> K[ListWorkflows]
+    D --> L[GetWorkflowStatus]
+    
+    E --> M[WorkflowCreated]
+    E --> N[WorkflowStarted]
+    E --> O[StepCompleted]
+    E --> P[WorkflowCompleted]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B choice
+    class C,D,E primary
+    class F,G,H,I,J,K,L secondary
+    class M,N,O,P result
+```
+
+The Workflow domain API provides commands, queries, and events for comprehensive workflow management across all CIM domains.
 
 ## Commands
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Workflow API
+    participant A as Aggregate
+    participant E as Event Store
+    
+    C->>API: CreateWorkflow Command
+    API->>A: Validate & Process
+    A->>E: Store WorkflowCreated Event
+    E-->>A: Event Persisted
+    A-->>API: Success Response
+    API-->>C: Workflow ID
+```
 
 ### CreateWorkflow
 

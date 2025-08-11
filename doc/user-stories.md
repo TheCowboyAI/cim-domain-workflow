@@ -2,6 +2,40 @@
 
 ## Overview
 
+```mermaid
+graph TD
+    A[User Stories] --> B[Workflow Design]
+    A --> C[Workflow Execution]
+    A --> D[Process Orchestration]
+    A --> E[Task Automation]
+    
+    B --> F[Visual Design]
+    B --> G[Template Usage]
+    B --> H[Import/Export]
+    
+    C --> I[Start Workflows]
+    C --> J[Monitor Progress]
+    C --> K[Handle Failures]
+    
+    D --> L[Cross-Domain Flows]
+    D --> M[Event Coordination]
+    
+    E --> N[Automated Tasks]
+    E --> O[Human Tasks]
+    E --> P[Approvals]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,C,D,E primary
+    class F,G,H,I,J,K,L,M secondary
+    class N,O,P result
+```
+
 User stories for the Workflow domain module, which manages process orchestration, task automation, and workflow execution in the CIM system using state machines and event-driven patterns.
 
 ## Workflow Design and Creation
@@ -28,6 +62,18 @@ graph TD
     D --> F[Send Notification]
     E --> G[End]
     F --> G
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,D,F secondary
+    class C choice
+    class E primary
+    class G result
 ```
 
 **Tests:** `test_design_workflow`, `test_workflow_validation`

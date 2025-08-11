@@ -2,15 +2,76 @@
 
 ## Overview
 
+```mermaid
+flowchart TD
+    A[Domain-Specific Workflows] --> B{Migration Process}
+    B --> C[Phase 1: Dependencies]
+    B --> D[Phase 2: Data Migration]
+    B --> E[Phase 3: API Updates]
+    B --> F[Phase 4: Testing & Validation]
+    C --> G[Consolidated Workflow Domain]
+    D --> G
+    E --> G
+    F --> G
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B choice
+    class C,D,E,F secondary
+    class G result
+```
+
 This guide provides step-by-step instructions for migrating domain-specific workflow implementations to use the consolidated cim-domain-workflow system.
 
 ## Prerequisites
+
+```mermaid
+graph LR
+    A[Prerequisites] --> B[Design Understanding]
+    A --> C[Codebase Access]
+    A --> D[Category Theory Knowledge]
+    
+    B --> B1[Consolidated Workflow Design]
+    C --> C1[Domain-specific Code]
+    D --> D1[CIM Principles]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,C,D secondary
+    class B1,C1,D1 result
+```
 
 - Understanding of the [Consolidated Workflow Design](./consolidated-workflow-design.md)
 - Access to domain-specific codebase
 - Basic understanding of Category Theory principles in CIM
 
 ## Migration Phases
+
+```mermaid
+sequenceDiagram
+    participant D as Domain Code
+    participant M as Migration Process
+    participant C as Compatibility Layer
+    participant W as Workflow Core
+    
+    D->>M: Start Migration
+    M->>C: Create Compatibility Layer
+    C->>W: Add Core Dependency
+    W-->>C: Provide Shared Types
+    C-->>D: Gradual API Transition
+    D->>W: Direct Integration
+    W-->>D: Consolidated Workflows
+```
 
 ### Phase 1: Dependencies and Compatibility Layer
 

@@ -6,6 +6,38 @@ This document outlines the transformation of cim-domain-workflow from a single-d
 
 ## Current State Analysis
 
+```mermaid
+graph TD
+    A[CIM Domains] --> B[cim-domain-workflow]
+    A --> C[cim-domain-document]
+    A --> D[cim-domain-person]
+    A --> E[cim-domain-organization]
+    A --> F[cim-domain-location]
+    
+    B --> B1[Full DDD Aggregate]
+    B --> B2[Event Sourcing]
+    B --> B3[State Machines]
+    C --> C1[Document Workflows]
+    C --> C2[CID Integrity]
+    D --> D1[Person Onboarding]
+    D --> D2[Identity Verification]
+    E --> E1[Org Hierarchy]
+    E --> E2[Role-based Workflows]
+    F --> F1[Geographic Validation]
+    F --> F2[Territory Management]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B primary
+    class C,D,E,F secondary
+    class B1,B2,B3,C1,C2,D1,D2,E1,E2,F1,F2 result
+```
+
 ### Workflow Implementations Found Across CIM Domains
 
 1. **cim-domain-workflow** - Full DDD aggregate with event sourcing, state machines, step management
@@ -16,6 +48,41 @@ This document outlines the transformation of cim-domain-workflow from a single-d
 
 ### Key Pattern Inconsistencies Identified
 
+```mermaid
+graph LR
+    A[Pattern Issues] --> B[ID Type Duplication]
+    A --> C[State Machine Variations]
+    A --> D[Event Schema Divergence]
+    A --> E[Context Object Differences]
+    A --> F[Integration Complexity]
+    
+    B --> B1[WorkflowId Redefined]
+    B --> B2[NodeId Redefined]
+    B --> B3[StepId Redefined]
+    
+    C --> C1[Different Implementations]
+    C --> C2[Inconsistent Transitions]
+    
+    D --> D1[Inconsistent Structures]
+    D --> D2[Different Naming]
+    
+    E --> E1[Domain-specific Context]
+    E --> E2[No Shared Interface]
+    
+    F --> F1[No Cross-Domain Standard]
+    F --> F2[Complex Integration]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,C,D,E,F primary
+    class B1,B2,B3,C1,C2,D1,D2,E1,E2,F1,F2 result
+```
+
 - **ID Type Duplication**: Each domain redefines `WorkflowId`, `NodeId`, `StepId`
 - **State Machine Variations**: Different state machine implementations across domains  
 - **Event Schema Divergence**: Inconsistent event structures and naming
@@ -25,6 +92,38 @@ This document outlines the transformation of cim-domain-workflow from a single-d
 ## Consolidated Architecture Design
 
 ### Core Principle: Abstract Workflow Domain
+
+```mermaid
+graph TD
+    A[Category Theory Foundation] --> B[Objects: Workflow Instances]
+    A --> C[Morphisms: State Transitions]
+    A --> D[Composition: Chain Workflows]
+    A --> E[Identity: Domain Extensions]
+    
+    B --> F[Document Workflows]
+    B --> G[Person Workflows]
+    B --> H[Org Workflows]
+    B --> I[Location Workflows]
+    
+    C --> J[Cross-Domain Interactions]
+    C --> K[State Machine Transitions]
+    
+    D --> L[Multi-Domain Chains]
+    D --> M[Workflow Orchestration]
+    
+    E --> N[Domain-Specific Logic]
+    E --> O[Natural Transformations]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:4px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef choice fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef result fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    classDef start fill:#2D3436,stroke:#000,stroke-width:4px,color:#fff
+    
+    class A start
+    class B,C,D,E choice
+    class F,G,H,I,J,K,L,M,N,O result
+```
 
 Transform workflows from domain-specific implementations into a **Category** where:
 - **Objects** = Workflow instances across all domains

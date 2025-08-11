@@ -23,6 +23,8 @@ tokio = { version = "1", features = ["sync", "macros", "rt-multi-thread"] }
 async-nats = "0.41"
 futures = "0.3"
 async-trait = "0.1"
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4"
@@ -46,3 +48,7 @@ path = "examples/nats_workflow_demo.rs"
 [[example]]
 name = "cross_domain_workflow"
 path = "examples/cross_domain_workflow.rs"
+
+[[example]]
+name = "observability_demo"
+path = "examples/observability_demo.rs"
