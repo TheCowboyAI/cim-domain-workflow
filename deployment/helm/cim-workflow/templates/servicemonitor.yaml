@@ -1,0 +1,44 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "cim-workflow.fullname" . }}
+  {{- if .Values.monitoring.serviceMonitor.namespace }}
+  namespace: {{ .Values.monitoring.serviceMonitor.namespace }}
+  {{- end }}
+  labels:
+    {{- include "cim-workflow.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.monitoring.serviceMonitor.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "cim-workflow.selectorLabels" . | nindent 6 }}
+  {{- if .Values.monitoring.serviceMonitor.namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml .Values.monitoring.serviceMonitor.namespaceSelector | nindent 4 }}
+  {{- end }}
+  endpoints:
+    - port: http
+      {{- if .Values.monitoring.serviceMonitor.interval }}
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.monitoring.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      path: /metrics
+      scheme: http
+      {{- if .Values.monitoring.serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml .Values.monitoring.serviceMonitor.relabelings | nindent 8 }}
+      {{- end }}
+      {{- if .Values.monitoring.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml .Values.monitoring.serviceMonitor.metricRelabelings | nindent 8 }}
+      {{- end }}
+{{- end }}

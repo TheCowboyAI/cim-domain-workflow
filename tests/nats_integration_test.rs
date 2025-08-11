@@ -6,6 +6,7 @@ use cim_domain_workflow::{
     domain_events::WorkflowDomainEvent,
 };
 use async_nats;
+use futures::StreamExt;
 
 /// Test workflow event publishing to NATS
 /// 

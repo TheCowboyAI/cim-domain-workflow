@@ -350,7 +350,7 @@ pub struct TemplateInstantiationEngine {
     /// Template repository
     repository: Arc<dyn TemplateRepository>,
     /// Workflow engine for instantiation
-    workflow_engine: Box<dyn WorkflowEngine>,
+    _workflow_engine: Box<dyn WorkflowEngine>,
     /// Parameter processors
     parameter_processors: HashMap<ParameterType, Box<dyn ParameterProcessor>>,
     /// Validation engine
@@ -467,7 +467,7 @@ impl TemplateInstantiationEngine {
     ) -> Self {
         Self {
             repository,
-            workflow_engine,
+            _workflow_engine: workflow_engine,
             parameter_processors: HashMap::new(),
             validation_engine: ValidationEngine::new(),
         }
@@ -630,7 +630,7 @@ impl TemplateInstantiationEngine {
             TemplateStepType::Conditional => crate::algebra::event_algebra::EventType::Extension(
                 crate::algebra::event_algebra::ExtensionEventType::Custom("conditional_step_created".to_string())
             ),
-            TemplateStepType::CrossDomain { target_domain, coordination_type } => {
+            TemplateStepType::CrossDomain { target_domain: _, coordination_type: _ } => {
                 crate::algebra::event_algebra::EventType::CrossDomain(
                     crate::algebra::event_algebra::CrossDomainEventType::CrossDomainRequest
                 )
@@ -778,7 +778,7 @@ impl ValidationEngine {
     async fn validate_constraint(
         &self,
         constraint: &TemplateConstraint,
-        template: &WorkflowTemplate,
+        _template: &WorkflowTemplate,
         parameters: &HashMap<String, serde_json::Value>,
     ) -> Result<bool, TemplateError> {
         match constraint.constraint_type {

@@ -3,11 +3,11 @@
 //! Provides comprehensive error tracing, correlation tracking, and observability
 //! features for debugging and monitoring workflow system errors.
 
-use crate::error::types::{WorkflowError, ErrorContext, ErrorCategory, ErrorSeverity};
+use crate::error::types::{WorkflowError, ErrorCategory, ErrorSeverity};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
@@ -560,7 +560,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_correlation_tracker() {
-        let tracker = ErrorCorrelationTracker::new(Duration::from_hours(1));
+        let tracker = ErrorCorrelationTracker::new(Duration::from_secs(3600)); // 1 hour
         
         let context = ErrorContext::new("test".to_string());
         let error = WorkflowError::network_error(

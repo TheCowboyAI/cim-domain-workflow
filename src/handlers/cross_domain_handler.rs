@@ -38,8 +38,8 @@ struct PendingOperation {
     workflow_id: WorkflowId,
     step_id: StepId,
     operation: String,
-    target_domain: String,
-    requested_at: chrono::DateTime<chrono::Utc>,
+    _target_domain: String,
+    _requested_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl CrossDomainHandler {
@@ -87,8 +87,8 @@ impl CrossDomainHandler {
             workflow_id,
             step_id,
             operation: operation.clone(),
-            target_domain: target_domain.clone(),
-            requested_at,
+            _target_domain: target_domain.clone(),
+            _requested_at: requested_at,
         };
         
         self.pending_operations.lock().await.insert(correlation_id.clone(), pending);

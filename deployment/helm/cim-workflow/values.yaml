@@ -1,0 +1,291 @@
+# Default values for CIM Workflow
+# This is a YAML-formatted file.
+
+## Application Configuration
+replicaCount: 3
+
+image:
+  repository: cim-workflow
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+## Service Configuration
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+  extraPorts: []
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+
+## Ingress Configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: workflow.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: cim-workflow-tls
+      hosts:
+        - workflow.company.com
+
+## Resource Management
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+## Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+## Pod Configuration
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+## Node Assignment
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - cim-workflow
+          topologyKey: kubernetes.io/hostname
+
+## Health Checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+## Application Configuration
+config:
+  logLevel: info
+  environment: production
+  database:
+    maxConnections: 50
+    connectionTimeout: 30
+  nats:
+    maxReconnects: 10
+    reconnectDelay: 1000
+  metrics:
+    enabled: true
+  tracing:
+    enabled: false
+  workflow:
+    maxConcurrent: 1000
+    timeoutSeconds: 3600
+  security:
+    jwtSecret: "change-me-in-production"
+    corsOrigins:
+      - "*"
+  performance:
+    threadPoolSize: 4
+    maxRequestSizeMb: 16
+
+## External Services
+postgresql:
+  enabled: false  # Use external PostgreSQL in production
+  auth:
+    username: "cim_user"
+    password: "changeme"
+    database: "cim_workflows"
+  external:
+    host: ""
+    port: 5432
+    database: "cim_workflows"
+    url: ""
+    existingSecret: "cim-db-secret"
+    secretKeys:
+      username: "username"
+      password: "password"
+
+nats:
+  enabled: false  # Use external NATS in production
+  external:
+    url: "nats://nats-cluster:4222"
+    existingSecret: ""
+
+## Monitoring Configuration
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+  
+  prometheus:
+    enabled: false
+    server:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+  
+  grafana:
+    enabled: false
+    admin:
+      existingSecret: "grafana-admin-secret"
+    persistence:
+      enabled: true
+      size: 5Gi
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+    dashboards:
+      default:
+        cim-workflow-dashboard:
+          gnetId: null
+          datasource: Prometheus
+
+## Persistent Storage
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+## Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+  s3:
+    bucket: ""
+    region: ""
+    accessKey: ""
+    secretKey: ""
+    existingSecret: "backup-s3-secret"
+
+## Migration Configuration  
+migration:
+  enabled: false
+  image:
+    repository: cim-migration-tools
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  job:
+    backoffLimit: 3
+    activeDeadlineSeconds: 3600  # 1 hour timeout
+
+## Network Policies
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 4222  # NATS
+        - protocol: TCP
+          port: 53    # DNS
+        - protocol: UDP
+          port: 53    # DNS
+
+## Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+## Service Account
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+## Extra Environment Variables
+extraEnvVars: []
+extraEnvVarsSecret: ""
+extraEnvVarsConfigMap: ""
+
+## Init Containers
+initContainers: []
+
+## Sidecar Containers
+sidecars: []
+
+## Extra Volumes
+extraVolumes: []
+
+## Extra Volume Mounts
+extraVolumeMounts: []

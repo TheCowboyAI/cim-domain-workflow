@@ -4,12 +4,12 @@
 //! cross-domain workflow coordination based on the Workflow Subject Algebra.
 
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-use crate::algebra::{WorkflowEvent, RelationType, CausationChain, Subject};
+use crate::algebra::{WorkflowEvent, RelationType, Subject};
 
 /// CIM-compliant event correlator for tracking cross-domain workflows
 // Debug derive removed due to trait objects in completion_listeners
@@ -409,13 +409,24 @@ impl WorkflowEventCorrelator {
 
     fn calculate_chain_statistics(&self, chain_state: &CorrelationChainState) -> ChainStatistics {
         let mut events_per_domain = HashMap::new();
-        let mut total_processing_time = chrono::Duration::zero();
         let mut cross_domain_transitions = 0;
         let mut last_domain: Option<&String> = None;
+        let mut last_timestamp: Option<chrono::DateTime<chrono::Utc>> = None;
+        let mut total_processing_time = chrono::Duration::zero();
 
-        for event in chain_state.events.values() {
+        // Sort events by timestamp for proper processing time calculation
+        let mut sorted_events: Vec<_> = chain_state.events.values().collect();
+        sorted_events.sort_by_key(|e| e.timestamp);
+
+        for event in sorted_events {
             // Count events per domain
             *events_per_domain.entry(event.domain.clone()).or_insert(0) += 1;
+
+            // Calculate processing time between events
+            if let Some(last_ts) = last_timestamp {
+                total_processing_time = total_processing_time + (event.timestamp - last_ts);
+            }
+            last_timestamp = Some(event.timestamp);
 
             // Count cross-domain transitions
             if let Some(prev_domain) = last_domain {
@@ -426,7 +437,7 @@ impl WorkflowEventCorrelator {
             last_domain = Some(&event.domain);
         }
 
-        let duration = Utc::now() - chain_state.created_at;
+        let duration = chain_state.updated_at - chain_state.created_at;
         let avg_processing_time = if chain_state.events.is_empty() {
             chrono::Duration::zero()
         } else {
@@ -487,6 +498,22 @@ impl WorkflowEventCorrelator {
             }
         }
 
+        Ok(())
+    }
+
+    /// Cancel an active correlation chain
+    pub async fn cancel_correlation(&self, correlation_id: Uuid) -> Result<(), CorrelationError> {
+        let mut chains = self.active_chains.write()
+            .map_err(|_| CorrelationError::LockError("Failed to acquire chains lock".to_string()))?;
+        
+        if let Some(chain) = chains.get_mut(&correlation_id) {
+            chain.status = CorrelationChainStatus::Cancelled;
+            chain.updated_at = Utc::now();
+            
+            // Notify completion listeners about cancellation
+            self.notify_completion_listeners(correlation_id, CompletionReason::Cancelled)?;
+        }
+        
         Ok(())
     }
 }

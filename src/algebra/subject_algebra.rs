@@ -144,7 +144,7 @@ impl Subject {
     /// Convert to canonical string form
     pub fn to_canonical_string(&self) -> String {
         format!(
-            "{}.{}.{}.{}.{}",
+            "cim.{}.{}.{}.{}.{}",
             self.domain.to_string(),
             self.context.to_string(),
             self.event_type.to_string(),
@@ -202,10 +202,10 @@ impl SubjectComponent {
     pub fn matches(&self, other: &Self) -> bool {
         match (self, other) {
             (SubjectComponent::Wildcard, _) => true,
-            (_, SubjectComponent::Wildcard) => true,
+            (_, SubjectComponent::Wildcard) => false,
             (SubjectComponent::Specific(s1), SubjectComponent::Specific(s2)) => s1 == s2,
             (SubjectComponent::Alternatives(alts), SubjectComponent::Specific(s)) => alts.contains(s),
-            (SubjectComponent::Specific(s), SubjectComponent::Alternatives(alts)) => alts.contains(s),
+            (SubjectComponent::Specific(_), SubjectComponent::Alternatives(_)) => false,
             (SubjectComponent::Alternatives(alts1), SubjectComponent::Alternatives(alts2)) => {
                 !alts1.is_disjoint(alts2)
             },
@@ -241,7 +241,7 @@ impl FromStr for Subject {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.split('.').collect();
-        if parts.len() != 5 {
+        if parts.len() != 6 {
             return Err(SubjectParseError::InvalidFormat);
         }
 
@@ -257,12 +257,13 @@ impl FromStr for Subject {
             }
         };
 
+        // Skip the first "cim" prefix and parse the 5 main components
         Ok(Subject::new(
-            parse_component(parts[0])?,
-            parse_component(parts[1])?,
-            parse_component(parts[2])?,
-            parse_component(parts[3])?,
-            parse_component(parts[4])?,
+            parse_component(parts[1])?, // domain (workflow, person, etc.)
+            parse_component(parts[2])?, // context (instance, template, etc.)
+            parse_component(parts[3])?, // event_type (lifecycle, step, etc.)
+            parse_component(parts[4])?, // specificity (created, updated, etc.)
+            parse_component(parts[5])?, // correlation (correlation ID)
         ))
     }
 }
@@ -494,7 +495,7 @@ impl SubjectAlgebra {
 /// Error types for subject operations
 #[derive(Debug, thiserror::Error)]
 pub enum SubjectParseError {
-    #[error("Invalid subject format - expected 5 components separated by dots")]
+    #[error("Invalid subject format - expected 6 components separated by dots (cim.domain.context.event_type.specificity.correlation)")]
     InvalidFormat,
     #[error("Invalid component format: {0}")]
     InvalidComponent(String),
@@ -530,7 +531,7 @@ mod tests {
             .build()
             .unwrap();
 
-        assert_eq!(subject.to_canonical_string(), "workflow.instance.lifecycle.created.*");
+        assert_eq!(subject.to_canonical_string(), "cim.workflow.instance.lifecycle.created.*");
     }
 
     #[test]

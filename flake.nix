@@ -35,6 +35,7 @@
           rustVersion
           cargo-edit
           cargo-watch
+          cargo-tarpaulin
         ];
       in
       {

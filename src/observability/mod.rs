@@ -16,7 +16,7 @@ pub use alerts::*;
 pub use tracing::*;
 pub use dashboards::*;
 
-use crate::error::types::{WorkflowError, WorkflowResult};
+use crate::error::types::WorkflowResult;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 

@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use tokio::sync::RwLock;
-use uuid::Uuid;
 
 /// Metric types supported by the system
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -173,11 +172,11 @@ pub trait MetricExporter: Send + Sync {
 /// Prometheus metric exporter
 pub struct PrometheusExporter {
     /// Prometheus endpoint URL
-    endpoint: String,
+    _endpoint: String,
     /// Authentication credentials
-    auth: Option<PrometheusAuth>,
+    _auth: Option<PrometheusAuth>,
     /// HTTP client for sending metrics
-    client: reqwest::Client,
+    _client: reqwest::Client,
 }
 
 /// Prometheus authentication
@@ -190,11 +189,11 @@ pub struct PrometheusAuth {
 /// StatsD metric exporter
 pub struct StatsDExporter {
     /// StatsD server address
-    address: String,
+    _address: String,
     /// UDP socket for sending metrics
-    socket: std::net::UdpSocket,
+    _socket: std::net::UdpSocket,
     /// Metric prefix
-    prefix: String,
+    _prefix: String,
 }
 
 /// Console metric exporter for development/debugging
@@ -207,6 +206,22 @@ pub struct ConsoleExporter {
 pub struct CustomExporter {
     name: String,
     export_fn: Box<dyn Fn(Vec<MetricPoint>) -> Result<(), MetricExportError> + Send + Sync>,
+}
+
+/// Metric errors
+#[derive(Debug, thiserror::Error)]
+pub enum MetricError {
+    #[error("Duplicate metric name: {0}")]
+    DuplicateName(String),
+    
+    #[error("Metric not found: {0}")]
+    NotFound(String),
+    
+    #[error("Invalid metric type")]
+    InvalidType,
+    
+    #[error("Registry error: {0}")]
+    RegistryError(String),
 }
 
 /// Metric export errors
@@ -226,6 +241,57 @@ pub enum MetricExportError {
     
     #[error("Export error: {0}")]
     ExportError(String),
+}
+
+impl Metric {
+    /// Create a new metric
+    pub fn new(name: String, metric_type: MetricType, description: String) -> Self {
+        Self {
+            name,
+            metric_type,
+            description,
+            value: MetricValue::Counter(0),
+            labels: HashMap::new(),
+            last_updated: SystemTime::now(),
+        }
+    }
+
+    /// Get metric name
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Get metric type
+    pub fn metric_type(&self) -> &MetricType {
+        &self.metric_type
+    }
+
+    /// Get metric description
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    /// Get current value
+    pub fn value(&self) -> &MetricValue {
+        &self.value
+    }
+
+    /// Set metric value
+    pub fn set_value(&mut self, value: MetricValue) {
+        self.value = value;
+        self.last_updated = SystemTime::now();
+    }
+
+    /// Get labels
+    pub fn labels(&self) -> &HashMap<String, String> {
+        &self.labels
+    }
+
+    /// Add label
+    pub fn add_label(&mut self, key: String, value: String) {
+        self.labels.insert(key, value);
+        self.last_updated = SystemTime::now();
+    }
 }
 
 impl MetricsRegistry {
@@ -334,6 +400,16 @@ impl MetricsRegistry {
         }
     }
 
+    /// Register an existing metric with a name
+    pub async fn register_metric(&self, name: &str, metric: Arc<RwLock<Metric>>) -> Result<(), MetricError> {
+        let mut metrics = self.metrics.write().await;
+        if metrics.contains_key(name) {
+            return Err(MetricError::DuplicateName(name.to_string()));
+        }
+        metrics.insert(name.to_string(), metric);
+        Ok(())
+    }
+
     /// Get all metrics as metric points for export
     pub async fn collect_metrics(&self) -> Vec<MetricPoint> {
         let metrics = self.metrics.read().await;
@@ -414,6 +490,16 @@ impl Counter {
             0
         }
     }
+
+    /// Register this counter with the registry
+    pub async fn register(&self, name: &str) -> Result<(), MetricError> {
+        self.registry.register_metric(name, self.metric.clone()).await
+    }
+
+    /// Get the metric registry
+    pub fn registry(&self) -> &Arc<MetricsRegistry> {
+        &self.registry
+    }
 }
 
 impl Gauge {
@@ -452,6 +538,16 @@ impl Gauge {
         } else {
             0.0
         }
+    }
+
+    /// Register this gauge with the registry
+    pub async fn register(&self, name: &str) -> Result<(), MetricError> {
+        self.registry.register_metric(name, self.metric.clone()).await
+    }
+
+    /// Get the metric registry
+    pub fn registry(&self) -> &Arc<MetricsRegistry> {
+        &self.registry
     }
 }
 
@@ -611,9 +707,9 @@ impl PrometheusExporter {
     /// Create new Prometheus exporter
     pub fn new(endpoint: String, auth: Option<PrometheusAuth>) -> Self {
         Self {
-            endpoint,
-            auth,
-            client: reqwest::Client::new(),
+            _endpoint: endpoint,
+            _auth: auth,
+            _client: reqwest::Client::new(),
         }
     }
 }

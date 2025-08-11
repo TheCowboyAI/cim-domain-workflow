@@ -1,0 +1,151 @@
+groups:
+  - name: cim-workflow.rules
+    interval: 30s
+    rules:
+      # High-level SLIs
+      - record: cim_workflow:availability
+        expr: up{job="cim-workflow"}
+      
+      - record: cim_workflow:error_rate
+        expr: rate(cim_workflow_errors_total[5m])
+      
+      - record: cim_workflow:latency_p95
+        expr: histogram_quantile(0.95, rate(cim_workflow_duration_seconds_bucket[5m]))
+      
+      - record: cim_workflow:latency_p99
+        expr: histogram_quantile(0.99, rate(cim_workflow_duration_seconds_bucket[5m]))
+      
+      - record: cim_workflow:throughput
+        expr: rate(cim_workflow_executions_total[5m])
+      
+      # Resource utilization
+      - record: cim_workflow:cpu_usage
+        expr: rate(process_cpu_seconds_total{job="cim-workflow"}[5m]) * 100
+      
+      - record: cim_workflow:memory_usage_bytes
+        expr: process_resident_memory_bytes{job="cim-workflow"}
+      
+      # Business metrics
+      - record: cim_workflow:active_workflows
+        expr: cim_workflow_active_count
+      
+      - record: cim_workflow:completed_workflows
+        expr: increase(cim_workflow_completed_total[1h])
+      
+      - record: cim_workflow:failed_workflows
+        expr: increase(cim_workflow_failed_total[1h])
+
+  - name: cim-workflow.alerts
+    rules:
+      # Availability alerts
+      - alert: WorkflowServiceDown
+        expr: up{job="cim-workflow"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CIM Workflow service is down"
+          description: "CIM Workflow service has been down for more than 1 minute"
+      
+      - alert: WorkflowHighErrorRate
+        expr: cim_workflow:error_rate > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in CIM Workflow"
+          description: "CIM Workflow error rate is {{ $value }} errors/second"
+      
+      - alert: WorkflowCriticalErrorRate
+        expr: cim_workflow:error_rate > 0.5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical error rate in CIM Workflow"
+          description: "CIM Workflow error rate is {{ $value }} errors/second"
+      
+      # Latency alerts
+      - alert: WorkflowHighLatency
+        expr: cim_workflow:latency_p95 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency in CIM Workflow"
+          description: "CIM Workflow 95th percentile latency is {{ $value }}s"
+      
+      - alert: WorkflowCriticalLatency
+        expr: cim_workflow:latency_p95 > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical latency in CIM Workflow"
+          description: "CIM Workflow 95th percentile latency is {{ $value }}s"
+      
+      # Resource alerts
+      - alert: WorkflowHighCPU
+        expr: cim_workflow:cpu_usage > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage in CIM Workflow"
+          description: "CIM Workflow CPU usage is {{ $value }}%"
+      
+      - alert: WorkflowHighMemory
+        expr: cim_workflow:memory_usage_bytes > 2147483648  # 2GB
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage in CIM Workflow"
+          description: "CIM Workflow memory usage is {{ $value | humanize }}B"
+      
+      - alert: WorkflowCriticalMemory
+        expr: cim_workflow:memory_usage_bytes > 3221225472  # 3GB
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage in CIM Workflow"
+          description: "CIM Workflow memory usage is {{ $value | humanize }}B"
+      
+      # Business logic alerts
+      - alert: TooManyActiveWorkflows
+        expr: cim_workflow:active_workflows > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many active workflows"
+          description: "There are {{ $value }} active workflows"
+      
+      - alert: WorkflowProcessingStalled
+        expr: increase(cim_workflow_completed_total[10m]) == 0 and cim_workflow:active_workflows > 10
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Workflow processing appears to be stalled"
+          description: "No workflows completed in the last 10 minutes but {{ $value }} are active"
+      
+      # Dependency alerts
+      - alert: NATSConnectionLost
+        expr: cim_workflow_nats_connected == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NATS connection lost"
+          description: "CIM Workflow has lost connection to NATS"
+      
+      - alert: DatabaseConnectionIssues
+        expr: increase(cim_workflow_database_errors_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection issues"
+          description: "{{ $value }} database errors in the last 5 minutes"

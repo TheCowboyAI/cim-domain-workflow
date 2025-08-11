@@ -72,6 +72,8 @@ pub mod messaging;
 pub mod algebra;
 pub mod error;
 pub mod observability;
+pub mod performance;
+pub mod testing;
 
 // Backward compatibility layer
 pub mod compatibility;

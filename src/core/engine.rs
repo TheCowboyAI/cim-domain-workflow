@@ -6,7 +6,6 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use uuid::Uuid;
 
 use crate::primitives::{
     WorkflowContext, 
@@ -438,13 +437,62 @@ pub struct ExecutionHistoryEntry {
 #[derive(Debug)]
 struct WorkflowExecutionState {
     /// Current context
-    context: WorkflowContext,
+    _context: WorkflowContext,
     /// Current status
-    status: WorkflowExecutionStatus,
+    _status: WorkflowExecutionStatus,
     /// Execution start time
-    started_at: chrono::DateTime<chrono::Utc>,
+    _started_at: chrono::DateTime<chrono::Utc>,
     /// Last update time
-    updated_at: chrono::DateTime<chrono::Utc>,
+    _updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl WorkflowExecutionState {
+    /// Create new workflow execution state
+    pub fn new(context: WorkflowContext, status: WorkflowExecutionStatus) -> Self {
+        let now = chrono::Utc::now();
+        Self {
+            _context: context,
+            _status: status,
+            _started_at: now,
+            _updated_at: now,
+        }
+    }
+
+    /// Update the execution status
+    pub fn update_status(&mut self, status: WorkflowExecutionStatus) {
+        self._status = status;
+        self._updated_at = chrono::Utc::now();
+    }
+
+    /// Update the workflow context
+    pub fn update_context(&mut self, context: WorkflowContext) {
+        self._context = context;
+        self._updated_at = chrono::Utc::now();
+    }
+
+    /// Get current context
+    pub fn context(&self) -> &WorkflowContext {
+        &self._context
+    }
+
+    /// Get current status
+    pub fn status(&self) -> &WorkflowExecutionStatus {
+        &self._status
+    }
+
+    /// Get execution duration
+    pub fn execution_duration(&self) -> chrono::Duration {
+        self._updated_at - self._started_at
+    }
+
+    /// Check if workflow is still active
+    pub fn is_active(&self) -> bool {
+        matches!(self._status, 
+            WorkflowExecutionStatus::Running | 
+            WorkflowExecutionStatus::Paused | 
+            WorkflowExecutionStatus::Waiting
+        )
+    }
 }
 
 /// Engine configuration

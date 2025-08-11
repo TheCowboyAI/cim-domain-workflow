@@ -25,9 +25,16 @@ futures = "0.3"
 async-trait = "0.1"
 rand = "0.8"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+num_cpus = "1.16"
 
 [dev-dependencies]
 pretty_assertions = "1.4"
+criterion = { version = "0.5", features = ["html_reports"] }
+tokio-test = "0.4"
+
+[[bench]]
+name = "workflow_benchmarks"
+harness = false
 
 [[example]]
 name = "state_machine_demo"
@@ -52,3 +59,7 @@ path = "examples/cross_domain_workflow.rs"
 [[example]]
 name = "observability_demo"
 path = "examples/observability_demo.rs"
+
+[[example]]
+name = "performance_demo"
+path = "examples/performance_demo.rs"

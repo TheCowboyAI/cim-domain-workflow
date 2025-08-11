@@ -1,0 +1,37 @@
+apiVersion: v2
+name: cim-workflow
+description: CIM Domain Workflow - Enterprise workflow orchestration with algebraic foundations
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/thecowboyai/cim-domain-workflow
+sources:
+  - https://github.com/thecowboyai/cim-domain-workflow
+maintainers:
+  - name: CIM Development Team
+    email: dev@cim-consortium.org
+keywords:
+  - workflow
+  - orchestration
+  - cim
+  - domain-driven
+  - event-sourcing
+annotations:
+  category: Workflow
+dependencies:
+  - name: postgresql
+    version: 12.1.2
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: nats
+    version: 0.19.1
+    repository: https://nats-io.github.io/k8s/helm/charts/
+    condition: nats.enabled
+  - name: prometheus
+    version: 15.18.0
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.prometheus.enabled
+  - name: grafana
+    version: 6.43.5
+    repository: https://grafana.github.io/helm-charts
+    condition: monitoring.grafana.enabled

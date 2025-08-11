@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cim-workflow.fullname" . }}-config
+  labels:
+    {{- include "cim-workflow.labels" . | nindent 4 }}
+data:
+  app-config.toml: |
+    [server]
+    host = "0.0.0.0"
+    port = 8080
+    environment = {{ .Values.config.environment | quote }}
+    
+    [database]
+    max_connections = {{ .Values.config.database.maxConnections }}
+    connection_timeout_seconds = {{ .Values.config.database.connectionTimeout }}
+    
+    [nats]
+    {{- if .Values.nats.enabled }}
+    cluster_url = "nats://{{ include "cim-workflow.fullname" . }}-nats:4222"
+    {{- else }}
+    cluster_url = {{ .Values.nats.external.url | quote }}
+    {{- end }}
+    max_reconnects = {{ .Values.config.nats.maxReconnects }}
+    reconnect_delay_ms = {{ .Values.config.nats.reconnectDelay }}
+    
+    [logging]
+    level = {{ .Values.config.logLevel | quote }}
+    format = "json"
+    
+    [metrics]
+    enabled = {{ .Values.config.metrics.enabled }}
+    prometheus_endpoint = "/metrics"
+    
+    [tracing]
+    enabled = {{ .Values.config.tracing.enabled }}
+    {{- if .Values.config.tracing.enabled }}
+    jaeger_endpoint = "http://jaeger-collector:14268"
+    {{- end }}
+    
+    [workflow]
+    max_concurrent_workflows = {{ .Values.config.workflow.maxConcurrent | default 1000 }}
+    workflow_timeout_seconds = {{ .Values.config.workflow.timeoutSeconds | default 3600 }}
+    
+    [security]
+    jwt_secret_key = "{{ .Values.config.security.jwtSecret | default "change-me-in-production" }}"
+    cors_allowed_origins = {{ .Values.config.security.corsOrigins | default (list "*") | toJson }}
+    
+    [performance]
+    thread_pool_size = {{ .Values.config.performance.threadPoolSize | default 4 }}
+    max_request_size_mb = {{ .Values.config.performance.maxRequestSizeMb | default 16 }}

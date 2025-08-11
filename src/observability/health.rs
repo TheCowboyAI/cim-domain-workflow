@@ -10,7 +10,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use tokio::sync::RwLock;
-use uuid::Uuid;
 
 /// Health check status
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,7 +94,7 @@ pub trait HealthCheck: Send + Sync {
 /// Database connection health check
 pub struct DatabaseHealthCheck {
     check_id: String,
-    connection_string: String,
+    _connection_string: String,
     timeout: Duration,
 }
 
@@ -115,36 +114,36 @@ pub struct MemoryHealthCheck {
 
 /// CPU usage health check
 pub struct CpuHealthCheck {
-    check_id: String,
-    warning_threshold: f64,
-    critical_threshold: f64,
-    sample_duration: Duration,
+    _check_id: String,
+    _warning_threshold: f64,
+    _critical_threshold: f64,
+    _sample_duration: Duration,
 }
 
 /// Disk space health check
 pub struct DiskSpaceHealthCheck {
-    check_id: String,
-    path: String,
-    warning_threshold: f64,
-    critical_threshold: f64,
+    _check_id: String,
+    _path: String,
+    _warning_threshold: f64,
+    _critical_threshold: f64,
 }
 
 /// External service health check
 pub struct ServiceHealthCheck {
     check_id: String,
     service_name: String,
-    endpoint: String,
+    _endpoint: String,
     timeout: Duration,
     expected_status_codes: Vec<u16>,
 }
 
 /// Custom health check implementation
 pub struct CustomHealthCheck {
-    check_id: String,
-    component: String,
-    check_fn: Box<dyn Fn() -> futures::future::BoxFuture<'static, HealthCheckResult> + Send + Sync>,
-    interval: Duration,
-    critical: bool,
+    _check_id: String,
+    _component: String,
+    _check_fn: Box<dyn Fn() -> futures::future::BoxFuture<'static, HealthCheckResult> + Send + Sync>,
+    _interval: Duration,
+    _critical: bool,
 }
 
 /// Health monitor that orchestrates health checks
@@ -178,7 +177,7 @@ impl DatabaseHealthCheck {
     pub fn new(check_id: String, connection_string: String, timeout: Duration) -> Self {
         Self {
             check_id,
-            connection_string,
+            _connection_string: connection_string,
             timeout,
         }
     }
@@ -389,7 +388,7 @@ impl ServiceHealthCheck {
         Self {
             check_id,
             service_name,
-            endpoint,
+            _endpoint: endpoint,
             timeout,
             expected_status_codes,
         }
@@ -500,7 +499,7 @@ impl HealthMonitor {
             for check in checks.values() {
                 let check_id = check.check_id().to_string();
                 let permit = semaphore.clone().acquire_owned().await.unwrap();
-                let check_timeout = self.config.check_timeout;
+                let _check_timeout = self.config.check_timeout;
                 
                 // Clone check for async task (in real implementation, would handle this differently)
                 tasks.push(tokio::spawn(async move {
@@ -635,7 +634,7 @@ impl HealthMonitor {
                 let check_list = checks.read().await;
                 for check in check_list.values() {
                     let check_id = check.check_id().to_string();
-                    let check_timeout = config.check_timeout;
+                    let _check_timeout = config.check_timeout;
                     
                     // For now, simulate check execution
                     let result = HealthCheckResult {

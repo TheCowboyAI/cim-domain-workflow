@@ -1,0 +1,61 @@
+# CIM Domain Workflow - Production Configuration
+# Copyright 2024 The CIM Consortium. All rights reserved.
+
+[server]
+host = "0.0.0.0"
+port = 8080
+environment = "production"
+shutdown_timeout_seconds = 60
+
+[database]
+url = "${DATABASE_URL}"
+max_connections = 50
+connection_timeout_seconds = 30
+idle_timeout_seconds = 300
+max_lifetime_seconds = 1800
+
+[nats]
+cluster_url = "${NATS_URL}"
+max_reconnects = 10
+reconnect_delay_ms = 1000
+subscription_timeout_ms = 10000
+
+[logging]
+level = "info"
+format = "json"
+file_rotation = true
+max_file_size_mb = 1000
+
+[metrics]
+enabled = true
+prometheus_endpoint = "/metrics"
+collection_interval_seconds = 30
+
+[tracing]
+enabled = false
+jaeger_endpoint = "${JAEGER_ENDPOINT:-http://jaeger-collector:14268}"
+service_name = "cim-workflow-prod"
+sampling_rate = 0.1
+
+[workflow]
+max_concurrent_workflows = 1000
+workflow_timeout_seconds = 3600
+retry_max_attempts = 5
+retry_backoff_ms = 2000
+
+[security]
+jwt_secret_key = "${JWT_SECRET_KEY}"
+jwt_expiration_hours = 8
+cors_allowed_origins = ["${FRONTEND_URL}"]
+rate_limit_per_minute = 100
+
+[performance]
+thread_pool_size = 8
+max_request_size_mb = 16
+connection_pool_size = 20
+timeout_seconds = 60
+
+[features]
+enable_experimental_features = false
+enable_debugging = false
+enable_profiling = true

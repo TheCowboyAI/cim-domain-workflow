@@ -3,10 +3,10 @@
 //! Implements CIM-compliant event publishing using NATS with standardized subject
 //! patterns based on the Workflow Subject Algebra for distributed coordination.
 
-use async_nats::{Client, Message, Subscriber};
+use async_nats::{Client, Subscriber};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -293,10 +293,18 @@ impl WorkflowEventPublisher {
         let subject = Subject::from_event(request_event);
         let full_subject = format!("{}.{}", self.subject_prefix, subject.to_canonical_string());
 
-        // Set up response subscription
-        let reply_subject = format!("_INBOX.{}", Uuid::new_v4());
+        // Set up response subscription using the provided pattern
+        let response_subject = if response_subject_pattern.contains("*") {
+            // Use pattern as-is if it contains wildcards
+            format!("{}.{}", self.subject_prefix, response_subject_pattern)
+        } else {
+            // Otherwise, use inbox pattern for direct response
+            format!("_INBOX.{}", Uuid::new_v4())
+        };
+        
+        let reply_subject = response_subject.clone();
         let mut subscriber = self.client
-            .subscribe(reply_subject.clone())
+            .subscribe(response_subject.clone())
             .await
             .map_err(|e| PublisherError::SubscriptionError(e.to_string()))?;
 
@@ -331,6 +339,73 @@ impl WorkflowEventPublisher {
     /// Get publication statistics
     pub async fn get_statistics(&self) -> PublicationStatistics {
         self.stats.read().await.clone()
+    }
+
+    /// Subscribe to events matching a subject pattern
+    pub async fn subscribe_to_pattern(
+        &self,
+        subject_pattern: &str,
+        handler: EventHandler,
+    ) -> Result<String, PublisherError> {
+        let subscription_id = Uuid::new_v4().to_string();
+        let full_subject = format!("{}.{}", self.subject_prefix, subject_pattern);
+        
+        let mut subscriber = self.client.subscribe(full_subject.clone()).await
+            .map_err(|e| PublisherError::SubscriptionError(e.to_string()))?;
+        
+        // Create a dummy subscriber for the handle (this design needs improvement)
+        let dummy_subscriber = self.client.subscribe("_dummy.temp".to_string()).await
+            .map_err(|e| PublisherError::SubscriptionError(e.to_string()))?;
+        
+        let handle = SubscriptionHandle {
+            id: subscription_id.clone(),
+            subject: Subject::from_str(subject_pattern)
+                .map_err(|e| PublisherError::SubscriptionError(format!("Invalid subject pattern: {}", e)))?,
+            subscriber: dummy_subscriber,
+            started_at: chrono::Utc::now(),
+            message_count: 0,
+        };
+
+        {
+            let mut subscriptions = self.subscriptions.write().await;
+            subscriptions.insert(subscription_id.clone(), handle);
+        }
+
+        // Spawn task to handle incoming messages
+        let handler = Arc::new(handler);
+        let correlation_id = Uuid::new_v4();
+        tokio::spawn(async move {
+            while let Some(message) = subscriber.next().await {
+                if let Ok(event_data) = String::from_utf8(message.payload.to_vec()) {
+                    if let Ok(event) = serde_json::from_str::<WorkflowEvent>(&event_data) {
+                        let metadata = EventMetadata {
+                            message_id: correlation_id.to_string(),
+                            timestamp: chrono::Utc::now(),
+                            subject: message.subject.to_string(),
+                            publisher_id: "subscriber".to_string(),
+                            message_size: message.payload.len(),
+                            reply_subject: message.reply.map(|s| s.to_string()),
+                        };
+                        let _result = handler(event, metadata);
+                    }
+                }
+            }
+        });
+
+        Ok(subscription_id)
+    }
+
+    /// Unsubscribe from a pattern
+    pub async fn unsubscribe(&self, subscription_id: &str) -> Result<(), PublisherError> {
+        let mut subscriptions = self.subscriptions.write().await;
+        subscriptions.remove(subscription_id);
+        Ok(())
+    }
+
+    /// Get active subscriptions info
+    pub async fn get_subscription_ids(&self) -> Vec<String> {
+        let subscriptions = self.subscriptions.read().await;
+        subscriptions.keys().cloned().collect()
     }
 }
 
@@ -397,11 +472,12 @@ impl WorkflowEventSubscriber {
         target_domain: &str,
         handler: EventHandler,
     ) -> Result<String, SubscriberError> {
+        // Create specific cross-domain subject pattern for the two domains
         let cross_domain_subject = SubjectBuilder::new()
-            .domain("integration")
+            .domain(source_domain)
             .context("cross_domain")
             .event_type("coordination")
-            .any_specificity()
+            .specificity(format!("to_{}", target_domain))
             .any_correlation()
             .build()
             .map_err(|e| SubscriberError::InvalidSubject(e.to_string()))?;
@@ -414,6 +490,7 @@ impl WorkflowEventSubscriber {
         let handlers = self.handlers.clone();
         let stats = self.stats.clone();
         let correlator = self.correlator.clone();
+        let client = self.client.clone();
 
         tokio::spawn(async move {
             while let Some(message) = subscriber.next().await {
@@ -442,9 +519,16 @@ impl WorkflowEventSubscriber {
                                 eprintln!("Correlation error in subscriber: {}", e);
                             }
 
-                            // Handle response events
+                            // Handle response events - republish them if needed
                             for response_event in result.response_events {
-                                // Could publish response events here if needed
+                                let response_subject = Subject::from_event(&response_event);
+                                let full_subject = response_subject.to_canonical_string();
+                                
+                                if let Ok(payload) = serde_json::to_vec(&response_event) {
+                                    if let Err(e) = client.publish(full_subject, payload.into()).await {
+                                        eprintln!("Failed to publish response event: {}", e);
+                                    }
+                                }
                             }
 
                             // Update statistics
@@ -707,7 +791,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let handler = Box::new(|event: WorkflowEvent, _metadata: EventMetadata| -> EventHandlerResult {
+        let handler = Box::new(|_event: WorkflowEvent, _metadata: EventMetadata| -> EventHandlerResult {
             EventHandlerResult {
                 success: true,
                 response_events: vec![],

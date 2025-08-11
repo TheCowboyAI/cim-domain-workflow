@@ -77,7 +77,7 @@ pub trait Action: Clone + Debug + Send + Sync + 'static {
     fn name(&self) -> &str;
     
     /// Execute the action
-    async fn execute(&self, _context: &WorkflowContext) -> Result<ActionResult, ActionError>;
+    fn execute<'a>(&'a self, context: &'a WorkflowContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<ActionResult, ActionError>> + Send + 'a>>;
     
     /// Check if action has side effects
     fn has_side_effects(&self) -> bool;
@@ -334,7 +334,7 @@ where
     async fn process_event(
         &mut self,
         event: E,
-        context: &WorkflowContext,
+        _context: &WorkflowContext,
     ) -> Result<StateTransitionResult<S, A>, StateMachineError> {
         let from_state = self.current_state.clone();
         
@@ -681,12 +681,14 @@ mod tests {
             &self.name
         }
 
-        async fn execute(&self, _context: &WorkflowContext) -> Result<ActionResult, ActionError> {
-            Ok(ActionResult {
-                success: true,
-                output: None,
-                error: None,
-                metadata: HashMap::new(),
+        fn execute<'a>(&'a self, _context: &'a WorkflowContext) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<ActionResult, ActionError>> + Send + 'a>> {
+            Box::pin(async move {
+                Ok(ActionResult {
+                    success: true,
+                    output: None,
+                    error: None,
+                    metadata: HashMap::new(),
+                })
             })
         }
 

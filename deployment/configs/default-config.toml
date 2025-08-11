@@ -1,0 +1,61 @@
+# CIM Domain Workflow - Default Configuration
+# Copyright 2024 The CIM Consortium. All rights reserved.
+
+[server]
+host = "127.0.0.1"
+port = 8080
+environment = "development"
+shutdown_timeout_seconds = 30
+
+[database]
+url = "postgresql://cim_user:changeme@localhost:5432/cim_workflows_dev"
+max_connections = 10
+connection_timeout_seconds = 30
+idle_timeout_seconds = 600
+max_lifetime_seconds = 3600
+
+[nats]
+cluster_url = "nats://localhost:4222"
+max_reconnects = 10
+reconnect_delay_ms = 1000
+subscription_timeout_ms = 5000
+
+[logging]
+level = "debug"
+format = "pretty"
+file_rotation = false
+max_file_size_mb = 100
+
+[metrics]
+enabled = true
+prometheus_endpoint = "/metrics"
+collection_interval_seconds = 10
+
+[tracing]
+enabled = true
+jaeger_endpoint = "http://localhost:14268"
+service_name = "cim-workflow-dev"
+sampling_rate = 1.0
+
+[workflow]
+max_concurrent_workflows = 100
+workflow_timeout_seconds = 1800
+retry_max_attempts = 3
+retry_backoff_ms = 1000
+
+[security]
+jwt_secret_key = "dev-secret-key-change-in-production"
+jwt_expiration_hours = 24
+cors_allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+rate_limit_per_minute = 60
+
+[performance]
+thread_pool_size = 2
+max_request_size_mb = 16
+connection_pool_size = 5
+timeout_seconds = 30
+
+[features]
+enable_experimental_features = true
+enable_debugging = true
+enable_profiling = false

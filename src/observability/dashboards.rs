@@ -3,10 +3,9 @@
 //! Provides dashboard configuration, metric visualization, and integration
 //! with monitoring platforms like Grafana and custom dashboard solutions.
 
-use crate::observability::metrics::{MetricPoint, MetricValue, MetricsRegistry};
-use crate::observability::health::{SystemHealthSummary, HealthStatus};
+use crate::observability::metrics::{MetricValue, MetricsRegistry};
 use crate::observability::alerts::{Alert, AlertSeverity, AlertStatus};
-use crate::error::types::{WorkflowError, WorkflowResult, ErrorCategory, ErrorSeverity, ErrorContext};
+use crate::error::types::{WorkflowResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -474,12 +473,31 @@ impl DashboardRenderer {
     
     /// Render dashboard data
     pub async fn render_dashboard(&mut self, config: &DashboardConfig) -> WorkflowResult<HashMap<String, PanelData>> {
+        let now = SystemTime::now();
+        
+        // Check cache first
+        if let Some(cached) = self.dashboard_cache.get(&config.dashboard_id) {
+            if now < cached.expires_at {
+                return Ok(cached.panel_data.clone());
+            }
+        }
+        
         let mut panel_data = HashMap::new();
         
         for panel in &config.panels {
             let data = self.render_panel(panel).await?;
             panel_data.insert(panel.panel_id.clone(), data);
         }
+        
+        // Cache the results
+        let cached_data = CachedDashboardData {
+            config: config.clone(),
+            panel_data: panel_data.clone(),
+            last_updated: now,
+            expires_at: now + Duration::from_secs(30), // 30 second cache
+        };
+        
+        self.dashboard_cache.insert(config.dashboard_id.clone(), cached_data);
         
         Ok(panel_data)
     }
@@ -761,10 +779,13 @@ impl GrafanaDashboardExporter {
     /// Export dashboard to Grafana
     pub async fn export_dashboard(&self, config: &DashboardConfig) -> WorkflowResult<String> {
         // Convert internal dashboard config to Grafana format
-        let grafana_dashboard = self.convert_to_grafana_format(config);
+        let _grafana_dashboard = self.convert_to_grafana_format(config);
         
         // Send to Grafana API
-        let url = format!("{}/api/dashboards/db", self.grafana_url);
+        let _url = format!("{}/api/dashboards/db", self.grafana_url);
+        
+        // In real implementation, would use self.client for HTTP requests
+        let _client = &self.client;
         
         // Simulate API call
         tokio::time::sleep(Duration::from_millis(100)).await;

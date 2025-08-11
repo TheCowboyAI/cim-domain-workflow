@@ -368,7 +368,7 @@ impl DefaultRecoveryManager {
         initial_delay: Duration,
         max_delay: Duration,
         backoff_multiplier: f64,
-        context: &RecoveryContext,
+        _context: &RecoveryContext,
     ) -> WorkflowResult<RecoveryResult> {
         let start_time = Instant::now();
         let mut attempts = 0;
@@ -431,7 +431,7 @@ impl DefaultRecoveryManager {
         fallback_operation: &str,
         parameters: &HashMap<String, serde_json::Value>,
         timeout: Duration,
-        context: &RecoveryContext,
+        _context: &RecoveryContext,
     ) -> WorkflowResult<RecoveryResult> {
         let start_time = Instant::now();
         
@@ -480,7 +480,7 @@ impl DefaultRecoveryManager {
         degraded_mode: &str,
         performance_level: f32,
         feature_set: &[String],
-        context: &RecoveryContext,
+        _context: &RecoveryContext,
     ) -> WorkflowResult<RecoveryResult> {
         let start_time = Instant::now();
         
@@ -673,7 +673,7 @@ impl HealthMonitor {
     }
 
     /// Start health monitoring
-    pub async fn start_monitoring(&self, recovery_manager: Arc<dyn RecoveryManager>) {
+    pub async fn start_monitoring(&self, _recovery_manager: Arc<dyn RecoveryManager>) {
         let check_interval = self.check_interval;
         let thresholds = self.thresholds.clone();
         let metrics = self.metrics.clone();

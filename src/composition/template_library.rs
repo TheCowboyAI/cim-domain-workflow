@@ -165,7 +165,7 @@ impl StandardTemplateLibrary {
     
     /// Generate a template key from TemplateId
     fn template_key(&self, id: &TemplateId) -> String {
-        format!("{}/{}/{}@{}", id.namespace, id.name, id.version.major, id.version.minor)
+        id.to_string()
     }
     
     // Template Creation Methods
@@ -944,7 +944,7 @@ impl TemplateLibraryService {
         name: &str,
         version: &TemplateVersion,
     ) -> Option<&WorkflowTemplate> {
-        let key = format!("{}/{}@{}.{}", domain, name, version.major, version.minor);
+        let key = format!("{}/{}@{}", domain, name, version.to_string());
         
         // Check custom templates first
         if let Some(template) = self.custom_templates.get(&key) {
@@ -998,7 +998,7 @@ mod tests {
         assert!(!templates.is_empty());
         
         // Check for specific key templates
-        let single_approval = library.get_template("approval/single-approval@1.0");
+        let single_approval = library.get_template("approval/single-approval@1.0.0");
         assert!(single_approval.is_some());
         assert_eq!(single_approval.unwrap().name, "Single Approval Workflow");
     }

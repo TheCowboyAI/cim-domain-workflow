@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cim-workflow
+  labels:
+    name: cim-workflow
+    app.kubernetes.io/name: cim-workflow
+    app.kubernetes.io/part-of: cim-domain-workflow
+  annotations:
+    description: "CIM Domain Workflow production namespace"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cim-workflow-limits
+  namespace: cim-workflow
+spec:
+  limits:
+  - default:
+      cpu: "1000m"
+      memory: "1Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+  - default:
+      storage: "10Gi"
+    type: PersistentVolumeClaim
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cim-workflow-quota
+  namespace: cim-workflow
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: "20Gi"
+    requests.storage: "100Gi"
+    limits.cpu: "20"
+    limits.memory: "40Gi"
+    persistentvolumeclaims: "10"
+    pods: "50"
+    services: "10"
+    secrets: "20"
+    configmaps: "10"
