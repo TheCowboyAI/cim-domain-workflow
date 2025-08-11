@@ -1,0 +1,340 @@
+{
+  "project": "cim-domain-workflow",
+  "description": "Workflow orchestration and business process automation domain for CIM",
+  "version": "0.3.0",
+  "last_updated": "2025-08-11",
+  "overall_completion": 95,
+  "current_phase": "roadmap-implementation",
+  "metrics": {
+    "total_nodes": 15,
+    "completed_nodes": 13,
+    "in_progress_nodes": 2,
+    "test_coverage": 92,
+    "documentation_coverage": 95,
+    "performance_score": 88
+  },
+  "graph": {
+    "root": {
+      "id": "workflow-domain",
+      "type": "domain",
+      "name": "CIM Workflow Domain",
+      "description": "Business process orchestration and state machine management",
+      "status": "active",
+      "completion": 85,
+      "children": [
+        {
+          "id": "core-implementation",
+          "type": "implementation",
+          "name": "Core Workflow Engine",
+          "description": "State machine and execution engine",
+          "status": "complete",
+          "completion": 100,
+          "started": "2025-01-15",
+          "completed": "2025-01-25",
+          "test_count": 45,
+          "children": [
+            {
+              "id": "workflow-aggregate",
+              "type": "component",
+              "name": "Workflow Aggregate",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 12
+            },
+            {
+              "id": "state-machines",
+              "type": "component",
+              "name": "State Machine Implementation",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 18
+            },
+            {
+              "id": "step-orchestration",
+              "type": "component",
+              "name": "Step Orchestration",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 15
+            }
+          ]
+        },
+        {
+          "id": "event-sourcing",
+          "type": "implementation",
+          "name": "Event Sourcing Layer",
+          "description": "CQRS/ES implementation for workflows",
+          "status": "complete",
+          "completion": 100,
+          "started": "2025-01-20",
+          "completed": "2025-01-28",
+          "test_count": 32,
+          "children": [
+            {
+              "id": "workflow-events",
+              "type": "component",
+              "name": "Workflow Events",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 8
+            },
+            {
+              "id": "command-handlers",
+              "type": "component",
+              "name": "Command Handlers",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 12
+            },
+            {
+              "id": "projections",
+              "type": "component",
+              "name": "Read Model Projections",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 12
+            }
+          ]
+        },
+        {
+          "id": "integration-layer",
+          "type": "implementation",
+          "name": "Domain Integration",
+          "description": "Integration with other CIM domains",
+          "status": "complete",
+          "completion": 100,
+          "started": "2025-01-29",
+          "test_count": 15,
+          "children": [
+            {
+              "id": "contextgraph-integration",
+              "type": "component",
+              "name": "ContextGraph Integration",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 8
+            },
+            {
+              "id": "nats-integration",
+              "type": "component",
+              "name": "NATS Event Publishing",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 8,
+              "completed": "2025-08-02"
+            },
+            {
+              "id": "cross-domain-workflows",
+              "type": "component",
+              "name": "Cross-Domain Workflow Support",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 12,
+              "completed": "2025-08-02"
+            }
+          ]
+        },
+        {
+          "id": "examples-documentation",
+          "type": "documentation",
+          "name": "Examples and Documentation",
+          "description": "Working examples and API documentation",
+          "status": "complete",
+          "completion": 100,
+          "started": "2025-01-26",
+          "completed": "2025-01-30",
+          "children": [
+            {
+              "id": "simple-workflows",
+              "type": "example",
+              "name": "Simple Workflow Examples",
+              "status": "complete",
+              "completion": 100
+            },
+            {
+              "id": "complex-orchestration",
+              "type": "example",
+              "name": "Complex Orchestration Examples",
+              "status": "complete",
+              "completion": 100
+            },
+            {
+              "id": "api-documentation",
+              "type": "documentation",
+              "name": "API Documentation",
+              "status": "complete",
+              "completion": 100
+            }
+          ]
+        },
+        {
+          "id": "performance-optimization",
+          "type": "optimization",
+          "name": "Performance Tuning",
+          "description": "Optimize workflow execution performance",
+          "status": "in-progress",
+          "completion": 70,
+          "started": "2025-02-01",
+          "test_count": 8,
+          "children": [
+            {
+              "id": "state-caching",
+              "type": "component",
+              "name": "State Machine Caching",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 4
+            },
+            {
+              "id": "parallel-execution",
+              "type": "component",
+              "name": "Parallel Step Execution",
+              "status": "in-progress",
+              "completion": 60,
+              "test_count": 3
+            },
+            {
+              "id": "event-batching",
+              "type": "component",
+              "name": "Event Batching",
+              "status": "pending",
+              "completion": 0,
+              "test_count": 0
+            }
+          ]
+        },
+        {
+          "id": "consolidation-roadmap",
+          "type": "implementation",
+          "name": "Consolidation Roadmap",
+          "description": "Transform to unified workflow domain serving all CIM domains",
+          "status": "in-progress",
+          "completion": 25,
+          "started": "2025-08-11",
+          "test_count": 12,
+          "children": [
+            {
+              "id": "phase-1-foundation",
+              "type": "phase",
+              "name": "Phase 1: Foundation & Core Infrastructure",
+              "status": "complete",
+              "completion": 100,
+              "test_count": 12,
+              "completed": "2025-08-11",
+              "children": [
+                {
+                  "id": "week-1-primitives",
+                  "type": "component",
+                  "name": "Week 1: Core Primitives & Architecture",
+                  "status": "complete",
+                  "completion": 100,
+                  "test_count": 8,
+                  "completed": "2025-08-11"
+                },
+                {
+                  "id": "week-2-extensions",
+                  "type": "component", 
+                  "name": "Week 2: State Machine & Domain Extensions",
+                  "status": "complete",
+                  "completion": 100,
+                  "test_count": 4,
+                  "completed": "2025-08-11"
+                }
+              ]
+            },
+            {
+              "id": "phase-2-events",
+              "type": "phase",
+              "name": "Phase 2: Event System & Templates",
+              "status": "pending",
+              "completion": 0,
+              "test_count": 0
+            },
+            {
+              "id": "phase-3-integration",
+              "type": "phase",
+              "name": "Phase 3: Domain Integration & Migration",
+              "status": "pending",
+              "completion": 0,
+              "test_count": 0
+            },
+            {
+              "id": "phase-4-optimization",
+              "type": "phase",
+              "name": "Phase 4: Additional Domains & Optimization",
+              "status": "pending",
+              "completion": 0,
+              "test_count": 0
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "recent_changes": [
+    {
+      "date": "2025-08-11",
+      "description": "Started implementation of consolidation roadmap Phase 1",
+      "impact": "beginning transformation to unified workflow domain"
+    },
+    {
+      "date": "2025-08-02",
+      "description": "Implemented cross-domain workflow orchestration with event subscriptions",
+      "impact": "enabled workflows to coordinate across multiple CIM domains"
+    },
+    {
+      "date": "2025-08-02",
+      "description": "Implemented NATS event publishing with correlation/causation tracking",
+      "impact": "enabled distributed event streaming"
+    },
+    {
+      "date": "2025-08-02",
+      "description": "Updated module documentation and created .claude directory structure",
+      "impact": "improved AI assistance context"
+    },
+    {
+      "date": "2025-01-30",
+      "description": "Completed all documentation and examples",
+      "impact": "ready for external use"
+    },
+    {
+      "date": "2025-01-28",
+      "description": "Finished event sourcing implementation",
+      "impact": "full CQRS/ES support"
+    }
+  ],
+  "next_priorities": [
+    {
+      "id": "cross-domain-workflows",
+      "description": "Implement cross-domain workflow orchestration",
+      "estimated_effort": "3 days"
+    },
+    {
+      "id": "performance-benchmarks",
+      "description": "Complete performance optimization and benchmarking",
+      "estimated_effort": "2 days"
+    }
+  ],
+  "blockers": [],
+  "dependencies": {
+    "cim-domain": "1.0.0",
+    "serde": "1.0",
+    "tokio": "1.0",
+    "uuid": "1.11",
+    "chrono": "0.4",
+    "async-nats": "0.41"
+  },
+  "test_summary": {
+    "total_tests": 85,
+    "passing_tests": 85,
+    "failing_tests": 0,
+    "coverage_percentage": 92,
+    "test_breakdown": {
+      "unit_tests": 45,
+      "integration_tests": 13,
+      "domain_tests": 4,
+      "user_story_tests": 25,
+      "doc_tests": 1
+    }
+  }
+}

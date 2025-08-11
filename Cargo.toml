@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["The Cowboy AI"]
 description = "Workflow domain module for CIM - handles business process workflows"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/thecowboyai/alchemist"
+repository = "https://github.com/thecowboyai/cim-domain-workflow"
 keywords = ["workflow", "domain", "business-process", "cim"]
 categories = ["data-structures", "algorithms"]
 
@@ -17,9 +17,12 @@ cim-domain = { git = "https://github.com/TheCowboyAI/cim-domain.git", branch = "
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
-uuid = { version = "1.11", features = ["v4", "serde"] }
+uuid = { version = "1.11", features = ["v4", "v5", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["sync", "macros", "rt-multi-thread"] }
+async-nats = "0.41"
+futures = "0.3"
+async-trait = "0.1"
 
 [dev-dependencies]
 pretty_assertions = "1.4"
@@ -35,3 +38,11 @@ path = "examples/simple_order_workflow.rs"
 [[example]]
 name = "contextgraph_export"
 path = "examples/contextgraph_export.rs"
+
+[[example]]
+name = "nats_workflow_demo"
+path = "examples/nats_workflow_demo.rs"
+
+[[example]]
+name = "cross_domain_workflow"
+path = "examples/cross_domain_workflow.rs"

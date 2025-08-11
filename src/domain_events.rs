@@ -41,6 +41,18 @@ pub enum WorkflowDomainEvent {
     TaskAssigned(TaskAssigned),
     TaskReassigned(TaskReassigned),
     TaskCompleted(TaskCompleted),
+
+    // Cross-domain events
+    CrossDomainOperationRequested(CrossDomainOperationRequested),
+    CrossDomainOperationCompleted(CrossDomainOperationCompleted),
+    CrossDomainOperationFailed(CrossDomainOperationFailed),
+    CrossDomainEventSubscriptionRequested(CrossDomainEventSubscriptionRequested),
+    CrossDomainEventSubscriptionCancelled(CrossDomainEventSubscriptionCancelled),
+    CrossDomainEventReceived(CrossDomainEventReceived),
+    CrossDomainTransactionStarted(CrossDomainTransactionStarted),
+    CrossDomainTransactionPrepared(CrossDomainTransactionPrepared),
+    CrossDomainTransactionCommitted(CrossDomainTransactionCommitted),
+    CrossDomainTransactionRolledBack(CrossDomainTransactionRolledBack),
 }
 
 impl WorkflowDomainEvent {
@@ -82,6 +94,18 @@ impl WorkflowDomainEvent {
             WorkflowDomainEvent::TaskAssigned(e) => e.workflow_id,
             WorkflowDomainEvent::TaskReassigned(e) => e.workflow_id,
             WorkflowDomainEvent::TaskCompleted(e) => e.workflow_id,
+
+            // Cross-domain events
+            WorkflowDomainEvent::CrossDomainOperationRequested(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainOperationCompleted(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainOperationFailed(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainEventSubscriptionRequested(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainEventSubscriptionCancelled(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainEventReceived(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainTransactionStarted(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainTransactionPrepared(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainTransactionCommitted(e) => e.workflow_id,
+            WorkflowDomainEvent::CrossDomainTransactionRolledBack(e) => e.workflow_id,
         }
     }
 
@@ -118,6 +142,16 @@ impl WorkflowDomainEvent {
             WorkflowDomainEvent::TaskAssigned(_) => "TaskAssigned",
             WorkflowDomainEvent::TaskReassigned(_) => "TaskReassigned",
             WorkflowDomainEvent::TaskCompleted(_) => "TaskCompleted",
+            WorkflowDomainEvent::CrossDomainOperationRequested(_) => "CrossDomainOperationRequested",
+            WorkflowDomainEvent::CrossDomainOperationCompleted(_) => "CrossDomainOperationCompleted",
+            WorkflowDomainEvent::CrossDomainOperationFailed(_) => "CrossDomainOperationFailed",
+            WorkflowDomainEvent::CrossDomainEventSubscriptionRequested(_) => "CrossDomainEventSubscriptionRequested",
+            WorkflowDomainEvent::CrossDomainEventSubscriptionCancelled(_) => "CrossDomainEventSubscriptionCancelled",
+            WorkflowDomainEvent::CrossDomainEventReceived(_) => "CrossDomainEventReceived",
+            WorkflowDomainEvent::CrossDomainTransactionStarted(_) => "CrossDomainTransactionStarted",
+            WorkflowDomainEvent::CrossDomainTransactionPrepared(_) => "CrossDomainTransactionPrepared",
+            WorkflowDomainEvent::CrossDomainTransactionCommitted(_) => "CrossDomainTransactionCommitted",
+            WorkflowDomainEvent::CrossDomainTransactionRolledBack(_) => "CrossDomainTransactionRolledBack",
         }
     }
 } 

@@ -1,6 +1,7 @@
 //! Workflow identifier value object
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use uuid::Uuid;
 
 /// Unique identifier for a workflow
@@ -34,5 +35,11 @@ impl From<Uuid> for WorkflowId {
 impl From<WorkflowId> for Uuid {
     fn from(id: WorkflowId) -> Self {
         id.0
+    }
+}
+
+impl fmt::Display for WorkflowId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 } 

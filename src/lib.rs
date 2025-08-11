@@ -61,4 +61,14 @@ pub mod queries;
 pub mod state_machine;
 pub mod value_objects;
 
+// New consolidated architecture modules
+pub mod core;
+pub mod primitives;
+pub mod composition;
+pub mod messaging;
+pub mod algebra;
+
+// Backward compatibility layer
+pub mod compatibility;
+
 // Legacy workflow engine removed - replaced with proper DDD structure 
