@@ -70,7 +70,7 @@ async fn demonstrate_profiling(profiler: &Arc<Profiler>) -> Result<(), Box<dyn s
     handle.checkpoint("validation_start").await;
     
     // Simulate workflow creation
-    let context = WorkflowContext::new();
+    let context = HashMap::new();
     let (mut workflow, _events) = Workflow::new(
         "Performance Test Workflow".to_string(),
         "Workflow for performance testing".to_string(),

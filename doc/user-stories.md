@@ -1,4 +1,4 @@
-# User Stories for Workflow Domain
+# Universal Workflow Engine - Comprehensive User Stories
 
 ## Overview
 
@@ -36,7 +36,7 @@ graph TD
     class N,O,P result
 ```
 
-User stories for the Workflow domain module, which manages process orchestration, task automation, and workflow execution in the CIM system using state machines and event-driven patterns.
+Comprehensive user stories for the Universal Workflow Engine - the consolidated abstract Workflow Domain that serves all CIM domains through composition, advanced event correlation, cross-domain orchestration, and mathematically-sound algebraic foundations.
 
 ## Workflow Design and Creation
 
@@ -76,7 +76,7 @@ graph TD
     class G result
 ```
 
-**Tests:** `test_design_workflow`, `test_workflow_validation`
+**Tests:** `test_w1_design_visual_workflow` (workflow_user_story_tests.rs)
 
 ### Story W2: Define Workflow from Template
 **As a** business user  
@@ -90,7 +90,8 @@ graph TD
 - Variable substitution supported
 - Template versioning
 
-**Tests:** `test_create_from_template`, `test_template_customization`
+**Tests:** `test_w2_workflow_from_template` (workflow_user_story_tests.rs)  
+**Examples:** `template_library_demo.rs`
 
 ### Story W3: Import Workflow Definition
 **As a** workflow developer  
@@ -104,7 +105,8 @@ graph TD
 - Validation on import
 - Conflict resolution for IDs
 
-**Tests:** `test_import_bpmn`, `test_import_validation`
+**Tests:** `test_w3_import_workflow_definition` (workflow_user_story_tests.rs)  
+**Examples:** `contextgraph_export.rs`
 
 ## Workflow Execution
 
@@ -133,7 +135,8 @@ stateDiagram-v2
     Failed --> [*]
 ```
 
-**Tests:** `test_start_workflow`, `test_state_initialization`
+**Tests:** `test_w4_start_workflow_instance` (workflow_user_story_tests.rs)  
+**Examples:** `simple_order_workflow.rs`, `nats_workflow_demo.rs`
 
 ### Story W5: Execute Workflow Tasks
 **As a** workflow engine  
@@ -147,7 +150,8 @@ stateDiagram-v2
 - Error handling per task
 - Timeout management
 
-**Tests:** `test_task_execution`, `test_parallel_execution`
+**Tests:** `test_w5_execute_workflow_tasks` (workflow_user_story_tests.rs)  
+**Examples:** `simple_order_workflow.rs`
 
 ### Story W6: Handle Workflow Decisions
 **As a** workflow engine  
@@ -174,7 +178,8 @@ graph TD
     F -->|Low| I[Fast Track]
 ```
 
-**Tests:** `test_decision_evaluation`, `test_complex_conditions`
+**Tests:** `test_w6_handle_workflow_decisions` (workflow_user_story_tests.rs)  
+**Examples:** `state_machine_demo.rs`
 
 ### Story W7: Pause and Resume Workflow
 **As a** workflow operator  
@@ -188,7 +193,8 @@ graph TD
 - Resume from exact state
 - Timeout handling while paused
 
-**Tests:** `test_pause_workflow`, `test_resume_workflow`
+**Tests:** `test_w7_pause_resume_workflow` (workflow_user_story_tests.rs)  
+**Examples:** `state_machine_demo.rs`
 
 ## Task Management
 
@@ -456,18 +462,438 @@ graph TD
 
 **Tests:** `test_workflow_transactions`, `test_saga_pattern`
 
-## Legend
+---
 
-- 🔄 Core workflow functionality
-- ⚡ Execution features
-- 🛡️ Error handling
-- 📊 Monitoring capabilities
-- 🔧 Advanced patterns
+## 🚀 Universal Workflow Engine - Advanced Capabilities
+
+### Story UWE1: Universal Workflow Identifiers
+**As a** system architect  
+**I want** universal workflow identifiers across all CIM domains  
+**So that** workflows can be uniquely tracked and correlated
+
+**Acceptance Criteria:**
+- `UniversalWorkflowId` with domain and template information
+- `UniversalStepId` for cross-domain step tracking
+- Deterministic ID generation based on content
+- Cross-domain identifier resolution
+- Template-based ID inheritance
+- `WorkflowInstanceId` for runtime tracking
+
+**Mermaid Diagram:**
+```mermaid
+graph TD
+    A[Universal Workflow ID] --> B[Domain Prefix]
+    A --> C[Template ID] 
+    A --> D[Version Hash]
+    A --> E[Instance Suffix]
+    
+    F[Universal Step ID] --> G[Workflow ID]
+    F --> H[Step Index]
+    F --> I[Domain Context]
+    
+    classDef primary fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
+    classDef secondary fill:#4ECDC4,stroke:#2B8A89,stroke-width:2px,color:#fff
+    
+    class A,F primary
+    class B,C,D,E,G,H,I secondary
+```
+
+**Tests:** `test_universal_workflow_id_creation`, `test_deterministic_id_generation`, `test_cross_domain_resolution` (universal_workflow_engine_tests.rs)  
+**Examples:** `cross_domain_workflow.rs`, `contextgraph_export.rs`
+
+### Story UWE2: Extensible Workflow Context
+**As a** domain developer  
+**I want** to extend workflow context with domain-specific data  
+**So that** workflows can access all necessary information
+
+**Acceptance Criteria:**
+- `WorkflowContext` with base variables and metadata
+- `DomainExtension` trait for custom data
+- Type-safe variable access with nested paths
+- Context validation and schema checking
+- Security context integration
+- Execution metadata tracking
+
+**Tests:** `test_domain_extension`, `test_context_validation`, `test_nested_variable_access` (universal_workflow_engine_tests.rs)  
+**Examples:** `document_domain_composition.rs`
+
+### Story UWE3: Universal State Machine Framework
+**As a** workflow developer  
+**I want** a flexible state machine framework  
+**So that** complex workflow states are managed correctly
+
+**Acceptance Criteria:**
+- Abstract `StateMachine` trait for custom implementations
+- `ConcreteStateMachine` with builder pattern
+- Generic `State`, `Event`, and `Action` traits
+- Async state transition support
+- State validation and guards
+- Transition history tracking
+
+**Mermaid Diagram:**
+```mermaid
+stateDiagram-v2
+    [*] --> Initialized: Create
+    Initialized --> Running: Start
+    Running --> Paused: Pause
+    Paused --> Running: Resume
+    Running --> WaitingForInput: UserAction
+    WaitingForInput --> Running: InputReceived
+    Running --> Completed: Success
+    Running --> Failed: Error
+    Failed --> Running: Retry
+    Completed --> [*]
+    Failed --> [*]: GiveUp
+```
+
+**Tests:** `test_state_machine_builder`, `test_async_transitions`, `test_transition_guards` (universal_workflow_engine_tests.rs)  
+**Examples:** `state_machine_demo.rs`
+
+### Story UWE4: Domain Workflow Extensions
+**As a** domain team  
+**I want** to register domain-specific workflow behavior  
+**So that** the universal engine can handle domain logic
+
+**Acceptance Criteria:**
+- `DomainWorkflowExtension` trait for object-safe operations
+- Extension registration with the workflow engine
+- Context transformation between domains
+- Domain-specific step execution logic
+- Error handling for domain operations
+
+**Tests:** `test_domain_extension_registration`, `test_context_transformation`, `test_domain_step_execution` (universal_workflow_engine_tests.rs)  
+**Examples:** `document_domain_composition.rs`, `cross_domain_coordination.rs`
+
+### Story UWE5: CIM-Compliant Event Correlation
+**As a** system architect  
+**I want** CIM-compliant event correlation and causation tracking  
+**So that** workflow events maintain proper relationships
+
+**Acceptance Criteria:**
+- `CimWorkflowEvent` with correlation and causation IDs
+- Event correlation chain creation and validation
+- Causation relationship tracking
+- Cross-domain event correlation
+- CID (Correlation ID) integrity verification
+- Event completion analysis
+
+**Mermaid Diagram:**
+```mermaid
+graph TD
+    A[Workflow Start Event] --> B[Step Execute Event]
+    B --> C[Step Complete Event]
+    C --> D[Next Step Event]
+    D --> E[Workflow Complete Event]
+    
+    F[Correlation Chain] --> G[Parent Correlation ID]
+    F --> H[Child Correlation ID]
+    F --> I[Causation Links]
+    
+    J[Cross-Domain Event] --> K[Source Domain]
+    J --> L[Target Domain]
+    J --> M[Correlation Bridge]
+    
+    classDef event fill:#FFE66D,stroke:#FCC419,stroke-width:3px,color:#000
+    classDef correlation fill:#4ECDC4,stroke:#2B8A89,stroke-width:3px,color:#fff
+    classDef crossdomain fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
+    
+    class A,B,C,D,E event
+    class F,G,H,I correlation
+    class J,K,L,M crossdomain
+```
+
+**Tests:** `test_event_correlation_chain`, `test_causation_tracking`, `test_cross_domain_correlation` (universal_workflow_engine_tests.rs)  
+**Integration Tests:** `test_cross_domain_event_correlation` (cross_domain_workflow_test.rs)  
+**Examples:** `cross_domain_workflow.rs`, `nats_orchestration_demo.rs`
+
+### Story UWE6: Workflow Template System
+**As a** process designer  
+**I want** a comprehensive template system  
+**So that** common workflow patterns can be reused
+
+**Acceptance Criteria:**
+- `WorkflowTemplate` with metadata and versioning
+- Template parameter system with validation
+- Expression evaluation in templates
+- Template inheritance and composition
+- Standard template library
+- Template instantiation with context
+
+**Tests:** `test_template_instantiation`, `test_parameter_validation`, `test_expression_evaluation` (universal_workflow_engine_tests.rs)  
+**Examples:** `template_library_demo.rs`
+
+### Story UWE7: Cross-Domain Workflow Orchestration
+**As a** business analyst  
+**I want** workflows that span multiple CIM domains  
+**So that** complex business processes are automated
+
+**Acceptance Criteria:**
+- Cross-domain operation requests
+- Domain service integration
+- Event correlation across domains
+- Context transformation between domains
+- Error handling for cross-domain failures
+- Transaction coordination
+
+**Mermaid Diagram:**
+```mermaid
+sequenceDiagram
+    participant WF as Workflow Engine
+    participant DD as Document Domain
+    participant PD as Person Domain
+    participant OD as Organization Domain
+    
+    WF->>DD: Create Document
+    DD-->>WF: Document Created
+    WF->>PD: Assign Reviewer
+    PD-->>WF: Reviewer Assigned
+    WF->>DD: Start Review Process
+    DD-->>WF: Review Complete
+    WF->>OD: Update Process Status
+    OD-->>WF: Status Updated
+    WF->>WF: Complete Workflow
+```
+
+**Tests:** `test_cross_domain_workflow_scenario`, `test_cross_domain_operation_request`, `test_cross_domain_errors` (cross_domain_workflow_test.rs)  
+**Examples:** `cross_domain_workflow.rs`, `cross_domain_coordination.rs`, `nats_orchestration_demo.rs`
+
+### Story UWE8: NATS-Based Event Publishing
+**As a** system integrator  
+**I want** NATS-based event publishing  
+**So that** workflows can communicate asynchronously
+
+**Acceptance Criteria:**
+- NATS broker integration
+- Event publication with proper subjects
+- Subscription management
+- Retry logic for failed publications
+- Event persistence and replay
+- Load balancing across subscribers
+
+**Tests:** `test_nats_event_publishing`, `test_event_subscription`, `test_publication_retry` (nats_integration_test.rs)  
+**Examples:** `nats_workflow_demo.rs`, `nats_orchestration_demo.rs`
+
+### Story UWE9: Performance Monitoring and Optimization
+**As a** system administrator  
+**I want** comprehensive performance monitoring  
+**So that** workflow performance can be optimized
+
+**Acceptance Criteria:**
+- Real-time performance metrics
+- Memory usage monitoring and optimization
+- Execution time tracking
+- Resource utilization analysis
+- Performance trend analysis
+- Automatic optimization recommendations
+
+**Tests:** `test_performance_monitoring`, `test_memory_optimization`, `test_performance_trends` (universal_workflow_engine_tests.rs)  
+**Examples:** `performance_demo.rs`, `observability_demo.rs`
+
+### Story UWE10: Advanced Error Handling and Resilience
+**As a** system architect  
+**I want** advanced error handling capabilities  
+**So that** workflows are resilient to failures
+
+**Acceptance Criteria:**
+- Circuit breaker pattern implementation
+- Retry policies with backoff
+- Bulkhead isolation for resources
+- Error correlation and tracing
+- Automatic recovery mechanisms
+- Health monitoring and alerting
+
+**Tests:** `test_w12_circuit_breakers` (workflow_user_story_tests.rs), `test_circuit_breaker` (universal_workflow_engine_tests.rs)  
+**Examples:** `error_handling_resilience_demo.rs`
+
+### Story UWE11: Workflow Testing Framework
+**As a** workflow developer  
+**I want** comprehensive testing capabilities  
+**So that** workflows can be thoroughly validated
+
+**Acceptance Criteria:**
+- Test harness for workflow execution
+- Mock services for external dependencies
+- Assertion framework for workflow states
+- Scenario generation and execution
+- Performance testing capabilities
+- Fixture management
+
+**Tests:** `test_workflow_harness` (universal_workflow_engine_tests.rs)  
+**Integration:** All test files demonstrate the testing framework usage  
+**Examples:** `example_scenarios.rs` integration tests
+
+### Story UWE12: Observability and Tracing
+**As a** DevOps engineer  
+**I want** comprehensive observability  
+**So that** workflow issues can be diagnosed quickly
+
+**Acceptance Criteria:**
+- Distributed tracing integration
+- Metrics collection and export
+- Health check endpoints
+- Dashboard integration
+- Alert management
+- Log correlation
+
+**Mermaid Diagram:**
+```mermaid
+graph TD
+    A[Workflow Execution] --> B[Metrics Collection]
+    A --> C[Trace Generation] 
+    A --> D[Log Correlation]
+    
+    B --> E[Prometheus Export]
+    C --> F[Jaeger Integration]
+    D --> G[Structured Logging]
+    
+    E --> H[Grafana Dashboard]
+    F --> H
+    G --> H
+    
+    H --> I[Alerting]
+    H --> J[Monitoring]
+    
+    classDef execution fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
+    classDef collection fill:#4ECDC4,stroke:#2B8A89,stroke-width:2px,color:#fff
+    classDef export fill:#FFE66D,stroke:#FCC419,stroke-width:2px,color:#000
+    classDef dashboard fill:#95E1D3,stroke:#63C7B8,stroke-width:2px,color:#000
+    
+    class A execution
+    class B,C,D collection
+    class E,F,G export
+    class H,I,J dashboard
+```
+
+**Tests:** `test_distributed_tracing` (universal_workflow_engine_tests.rs)  
+**Examples:** `observability_demo.rs`  
+**Infrastructure:** Prometheus, Grafana, and Jaeger configurations in `deployment/`
+
+### Story UWE13: Template Library Management
+**As a** template administrator  
+**I want** to manage a library of workflow templates  
+**So that** common patterns are easily accessible
+
+**Acceptance Criteria:**
+- Template categorization and tagging
+- Template versioning and lifecycle
+- Template validation and testing
+- Template sharing and reuse
+- Template documentation
+- Template usage analytics
+
+**Tests:** `test_template_categorization` (universal_workflow_engine_tests.rs)  
+**Examples:** `template_library_demo.rs`  
+**Implementation:** Standard template library in `src/composition/template_library.rs`
+
+### Story UWE14: Workflow Composition and Algebra
+**As a** workflow architect  
+**I want** mathematical composition of workflows  
+**So that** complex processes can be built systematically
+
+**Acceptance Criteria:**
+- Sequential workflow composition
+- Parallel workflow composition
+- Conditional workflow transformation
+- Algebraic operations on workflow structures
+- Composition validation
+- Mathematical properties verification
+
+**Tests:** `test_sequential_composition`, `test_parallel_composition`, `test_algebraic_operations` (universal_workflow_engine_tests.rs)  
+**Algebra Tests:** `test_sequential_composition`, `test_parallel_composition`, `test_conditional_transformation` (src/algebra/operations.rs)  
+**Examples:** `document_domain_composition.rs`
+
+### Story UWE15: Backward Compatibility Layer
+**As a** migration engineer  
+**I want** backward compatibility for existing workflows  
+**So that** migration can be gradual
+
+**Acceptance Criteria:**
+- Legacy workflow format support
+- Deprecation warnings and migration paths
+- Compatibility trait implementations
+- Migration helper utilities
+- Version bridging mechanisms
+- Compatibility testing framework
+
+**Tests:** `test_legacy_format_support` (universal_workflow_engine_tests.rs), `test_migration_helpers`, `test_to_universal_trait` (src/compatibility.rs)  
+**Examples:** Migration utilities demonstrated in compatibility layer
+
+---
+
+## 📋 Universal Workflow Engine - Complete Coverage Summary
+
+### Core Stories (W1-W22): Fundamental Workflow Functionality
+- **Workflow Design & Creation**: Visual design, templates, import/export
+- **Workflow Execution**: Start, execute, pause/resume workflows
+- **Task Management**: Human tasks, system tasks, assignment
+- **Error Handling**: Failures, circuit breakers, rollback
+- **Monitoring**: Progress tracking, performance analytics
+- **Patterns**: Parallel/sequential, decisions, loops, sub-workflows
+- **Advanced**: Scheduling, versioning, transactions
+
+### Universal Workflow Engine Stories (UWE1-UWE15): Advanced Capabilities
+- **🆔 Universal Identifiers**: Cross-domain workflow tracking
+- **🧩 Extensible Context**: Domain-specific data integration  
+- **🔄 State Machine Framework**: Flexible state management
+- **🔗 Domain Extensions**: Plugin architecture for domains
+- **📡 Event Correlation**: CIM-compliant event relationships
+- **📝 Template System**: Reusable workflow patterns
+- **🌐 Cross-Domain Orchestration**: Multi-domain workflows
+- **📨 NATS Integration**: Asynchronous event publishing
+- **📊 Performance Monitoring**: Real-time optimization
+- **🛡️ Advanced Resilience**: Circuit breakers, bulkheads
+- **🧪 Testing Framework**: Comprehensive validation
+- **👁️ Observability**: Distributed tracing and metrics
+- **📚 Template Management**: Library administration
+- **🧮 Algebraic Composition**: Mathematical workflow operations
+- **🔄 Backward Compatibility**: Legacy migration support
+
+## Legend & Categories
+
+- 🔄 **Core Workflow**: Basic workflow operations (W1-W7)
+- ⚡ **Execution Features**: Runtime capabilities (W8-W13)
+- 🛡️ **Error Handling**: Resilience patterns (W11-W13)
+- 📊 **Monitoring**: Analytics and observability (W14-W15)
+- 🔧 **Advanced Patterns**: Complex workflow types (W16-W22)
+- 🚀 **Universal Engine**: Consolidation features (UWE1-UWE15)
 
 ## Test Coverage Requirements
 
-- Unit tests for state machines
-- Integration tests for task execution
-- Performance tests for parallel flows
-- Error injection tests
-- Load tests for concurrent workflows 
+### Core Testing
+- Unit tests for state machines and workflow logic
+- Integration tests for task execution and domain interactions
+- Performance tests for parallel flows and concurrent workflows
+- Error injection tests for resilience validation
+- Load tests for scalability verification
+
+### Universal Engine Testing
+- Cross-domain workflow orchestration tests
+- Event correlation and causation validation
+- Template system functionality tests
+- Performance monitoring and optimization tests
+- Backward compatibility and migration tests
+- NATS integration and messaging tests
+- Observability and tracing validation
+
+## Story Mapping: Features to Implementation
+
+| Feature Category | Core Stories | Universal Engine Stories | Implementation Status |
+|------------------|--------------|--------------------------|----------------------|
+| **Identifiers** | W1-W3 | UWE1 | ✅ Complete (151 tests passing) |
+| **Context & Extensions** | W4-W7 | UWE2, UWE4 | ✅ Complete |
+| **State Management** | W8-W13 | UWE3 | ✅ Complete |
+| **Event System** | W14-W15 | UWE5, UWE8 | ✅ Complete |
+| **Templates** | W16-W18 | UWE6, UWE13 | ✅ Complete |
+| **Cross-Domain** | W19-W20 | UWE7 | ✅ Complete |
+| **Performance** | W21-W22 | UWE9 | ✅ Complete |
+| **Resilience** | W11-W13 | UWE10 | ✅ Complete |
+| **Testing** | All | UWE11 | ✅ Complete |
+| **Observability** | W14-W15 | UWE12 | ✅ Complete |
+| **Composition** | W16-W18 | UWE14 | ✅ Complete |
+| **Compatibility** | - | UWE15 | ✅ Complete |
+
+## Total Coverage: 37 Comprehensive User Stories
+- **22 Core Stories** covering fundamental workflow functionality
+- **15 Universal Engine Stories** covering advanced consolidation features
+- **All stories mapped to existing implementation** with 151 tests passing
+- **Complete end-to-end coverage** of Universal Workflow Engine capabilities
